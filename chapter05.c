@@ -37,6 +37,7 @@ void swap(int *px, int *py){
 	*px = *py;
 	*py = temp;
 }
+
 int n, array[SIZE], getint(int *);
 for (n = 0; n < SIZE && getint(&array[n]) != EOF; n++)
 	;
