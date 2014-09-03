@@ -12,7 +12,7 @@ char line[MAXLINE+1];
 int days[31+28+LEAP+31+30+31+30+31+31+30+31+30+31];
 
 "I am a string"
-"" /* the empty string */
+"" 					/* the empty string */
 "hello, " "world"	/* string constants can be concatenated at compile time */
 "hello, world"
 

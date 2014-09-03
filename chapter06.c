@@ -1,5 +1,4 @@
 
-
 //chapter6: structures
 //6.1 basics of structures
 //6.2 structures and functions

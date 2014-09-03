@@ -34,7 +34,7 @@ Suppose that x and y are integers and ip is a pointer to int. This artificial se
 	ip = &x;	/* ip now points to x */
 	y = *ip;	/* y is now 1 */
 	*ip = 0;	/* x is now 0 */
-	ip = z[0]; 	/* ip now points to z[0] */
+	ip = &z[0]; /* ip now points to z[0] */
 The declaration of x, y, and z are what we've seen all along.
 The declaration of the pointer ip,
 	int *ip;
@@ -350,7 +350,7 @@ C does not provide any operators for processing an entire string of characters a
 
 There is an important difference between these definitions:
 	char amessage[] = "now is the time"; /* an array */
-	char *pmessage = "now is the time"; /* a pointer */
+	char *pmessage = "now is the time";  /* a pointer */
 amessage is an array, just big enough to hold the sequence of characters and '\0' that initializes it.
 Individual characters within the array may be changed but amessage will always refer to the same storage.
 On the other hand, pmessage is a pointer, initialized to point to a string constant; the pointer may subsequently be modified to point elsewhere, but the result is undefined if you try to modify the string contents.
@@ -367,6 +367,7 @@ void strcpy(char *s, char *t)
 		i++;
 }
 For contrast, here is a version of strcpy with pointers:
+
 /* strcpy: copy t to s; pointer version */
 void strcpy(char *s, char *t)
 {
@@ -377,10 +378,12 @@ void strcpy(char *s, char *t)
 		t++;
 	}
 }
+
 Because arguments are passed by value, strcpy can use the parameters s and t in any way it pleases.
 Here they are conveniently initialized pointers, which are marched along the arrays a character at a time, until the '\0' that terminates t has been copied into s.
 
 In practice, strcpy would not be written as we showed it above. Experienced C programmers would prefer
+
 /* strcpy: copy t to s; pointer version 2 */
 void strcpy(char *s, char *t)
 {
@@ -394,12 +397,14 @@ In the same way, the character is stored into the old s position before s is inc
 The net effect is that characters are copied from t to s, up and including the terminating '\0'.
 
 As the final abbreviation, observe that a comparison against '\0' is redundant, since the question is merely whether the expression is zero. So the function would likely be written as
+
 /* strcpy: copy t to s; pointer version 3 */
 void strcpy(char *s, char *t)
 {
 	while (*s++ = *t++)
 		;
 }
+
 Although this may seem cryptic at first sight, the notational convenience is considerable, and the idiom should be mastered, because you will see it frequently in C programs.
 
 The strcpy in the standard library (<string.h>) returns the target string as its function value.
@@ -418,6 +423,7 @@ int strcmp(char *s, char *t)
 }
 
 The pointer version of strcmp:
+
 /* strcmp: return <0 if s<t, 0 if s==t, >0 if s>t */
 int strcmp(char *s, char *t)
 {
@@ -439,6 +445,146 @@ Exercise 5-3. Write a pointer version of the function strcat that we showed in C
 Exercise 5-4. Write the function strend(s,t), which returns 1 if the string t occurs at the end of the string s, and zero otherwise.
 Exercise 5-5. Write versions of the library functions strncpy, strncat, and strncmp, which operate on at most the first n characters of their argument strings. For example, strncpy(s,t,n) copies at most n characters of t to s. Full descriptions are in Appendix B.
 Exercise 5-6. Rewrite appropriate programs from earlier chapters and exercises with pointers instead of array indexing. Good possibilities include getline (Chapters 1 and 4), atoi, itoa, and their variants (Chapters 2, 3, and 4), reverse (Chapter 3), and strindex and getop (Chapter 4).
+
+
+5.6 Pointer Arrays; Pointers to Pointers
+
+Since pointers are variables themselves, they can be stored in arrays just as other variables can.
+Let us illustrate by writing a program that will sort a set of text lines into alphabetic order, a stripped-down version of the UNIX program sort.
+
+In Chapter 3, we presented a Shell sort function that would sort an array of integers, and in Chapter 4 we improved on it with a quicksort.
+The same algorithms will work, except that now we have to deal with lines of text, which are of different lengths, and which, unlike integers, can't be compared or moved in a single operation.
+We need a data representation that will cope efficiently and conveniently with variable-length text lines.
+
+This is where the array of pointers enters. If the lines to be sorted are stored end-to-end in one long character array, then each line can be accessed by a pointer to its first character.
+The pointers themselves can bee stored in an array. Two lines can be compared by passing their pointers to strcmp.
+When two out-of-order lines have to be exchanged, the pointers in the pointer array are exchanged, not the text lines themselves.
+
+This eliminates the twin problems of complicated storage management and high overhead that would go with moving the lines themselves.
+
+The sorting process has three steps:
+	read all the lines of input
+	sort them
+	print them in order
+As usual, it's best to divide the program into functions that match this natural division, with the main routine controlling the other functions.
+Let us defer the sorting step for a moment, and concentrate on the data structure and the input and output.
+
+The input routine has to collect and save the characters of each line, and build an array of pointers to the lines. It will also have to count the number of input lines, since that information is needed for sorting and printing.
+Since the input function can only cope with a finite number of input lines, it can return some illegal count like -1 if too much input is presented.
+
+The output routine only has to print the lines in the order in which they appear in the array of pointers.
+
+#include <stdio.h>
+#include <string.h>
+
+#define MAXLINES 5000 		/* max #lines to be sorted */
+char *lineptr[MAXLINES]; 	/* pointers to text lines */
+
+int readlines(char *lineptr[], int nlines);
+void writelines(char *lineptr[], int nlines);
+void qsort(char *lineptr[], int left, int right);
+
+/* sort input lines */
+main()
+{
+	int nlines; 	/* number of input lines read */
+	if ((nlines = readlines(lineptr, MAXLINES)) >= 0) {
+		qsort(lineptr, 0, nlines-1);
+		writelines(lineptr, nlines);
+		return 0;
+	} else {
+		printf("error: input too big to sort\n");
+		return 1;
+	}
+}
+
+#define MAXLEN 1000 /* max length of any input line */
+int getline(char *, int);
+char *alloc(int);
+
+/* readlines: read input lines */
+int readlines(char *lineptr[], int maxlines)
+{
+	int len, nlines;
+	char *p, line[MAXLEN];
+	nlines = 0;
+	while ((len = getline(line, MAXLEN)) > 0)
+		if (nlines >= maxlines || p = alloc(len) == NULL)
+			return -1;
+	else {
+		line[len-1] = '\0'; /* delete newline */
+		strcpy(p, line);
+		lineptr[nlines++] = p;
+	}
+	return nlines;
+}
+
+/* writelines: write output lines */
+void writelines(char *lineptr[], int nlines)
+{
+	int i;
+	for (i = 0; i < nlines; i++)
+		printf("%s\n", lineptr[i]);
+}
+
+The function getline is from Section 1.9.
+
+The main new thing is the declaration for lineptr:
+	char *lineptr[MAXLINES]
+says that lineptr is an array of MAXLINES elements, each element of which is a pointer to a char.
+That is, lineptr[i] is a character pointer, and *lineptr[i] is the character it points to, the first character of the i-th saved text line.
+
+Since lineptr is itself the name of an array, it can be treated as a pointer in the same manner as in our earlier examples, and writelines can be written instead as
+
+/* writelines: write output lines */
+void writelines(char *lineptr[], int nlines)
+{
+	while (nlines-- > 0)
+	printf("%s\n", *lineptr++);
+}
+
+Initially, *lineptr points to the first line; each element advances it to the next line pointer while nlines is counted down.
+
+With input and output under control, we can proceed to sorting.
+The quicksort from Chapter 4 needs minor changes: the declarations have to be modified, and the comparison operation must be done by calling strcmp.
+The algorithm remains the same, which gives us some confidence that it will still work.
+
+/* qsort: sort v[left]...v[right] into increasing order */
+void qsort(char *v[], int left, int right)
+{
+	int i, last;
+	void swap(char *v[], int i, int j);
+
+	if (left >= right) 	/* do nothing if array contains */
+		return; 		/* fewer than two elements */
+
+	swap(v, left, (left + right)/2);
+	last = left;
+	for (i = left+1; i <= right; i++)
+		if (strcmp(v[i], v[left]) < 0)
+			swap(v, ++last, i);
+	swap(v, left, last);
+
+	qsort(v, left, last-1);
+	qsort(v, last+1, right);
+}
+
+Similarly, the swap routine needs only trivial changes:
+
+/* swap: interchange v[i] and v[j] */
+void swap(char *v[], int i, int j)
+{
+	char *temp;
+	temp = v[i];
+	v[i] = v[j];
+	v[j] = temp;
+}
+
+Since any individual element of v (alias lineptr) is a character pointer, temp must be also, so one can be copied to the other.
+
+Exercise 5-7. Rewrite readlines to store lines in an array supplied by main, rather than calling alloc to maintain storage. How much faster is the program?
+
+
 
 
 

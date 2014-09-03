@@ -1,0 +1,49 @@
+
+
+Appendix B - Standard Library
+
+B.1 Input and Output: <stdio.h>
+
+B.1.1 File Operations
+B.1.2 Formatted Output
+B.1.3 Formatted Input
+B.1.4 Character Input and Output Functions
+B.1.5 Direct Input and Output Functions
+B.1.6 File Positioning Functions
+B.1.7 Error Functions
+
+B.2 Character Class Tests: <ctype.h>
+B.3 String Functions: <string.h>
+B.4 Mathematical Functions: <math.h>
+B.5 Utility Functions: <stdlib.h>
+B.6 Diagnostics: <assert.h>
+B.7 Variable Argument Lists: <stdarg.h>
+B.8 Non-local Jumps: <setjmp.h>
+B.9 Signals: <signal.h>
+
+B.10 Date and Time Functions: <time.h>
+B.11 Implementation-defined Limits: <limits.h> and <float.h>
+
+
+This appendix is a summary of the library defined by the ANSI standard.
+The standard library is not part of the C language proper, but an environment that supports standard C will provide the function declarations and type and macro definitions of this library.
+We have omitted a few functions that are of limited utility or easily synthesized from others;
+we have omitted multi-byte characters; and we have omitted discussion of locale issues; that is, properties that depend on local language, nationality, or culture.
+
+The functions, types and macros of the standard library are declared in standard headers:
+
+<assert.h> 	<float.h> 	<math.h> 	<stdarg.h> 	<stdlib.h>
+<ctype.h> 	<limits.h> 	<setjmp.h> 	<stddef.h> 	<string.h>
+<errno.h> 	<locale.h> 	<signal.h> 	<stdio.h> 	<time.h>
+
+A header can be accessed by
+
+#include <header>
+
+Headers may be included in any order and any number of times. A header must be included outside of any external declaration or definition and before any use of anything it declares.  A header need not be a source file.
+External identifiers that begin with an underscore are reserved for use by the library, as are all other identifiers that begin with an underscore and an upper-case letter or another underscore.
+
+
+
+
+

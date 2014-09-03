@@ -1,5 +1,4 @@
 
-
 //chapter7: input and output
 //7.1 standard input and output
 //7.2 formatted output - printf
@@ -21,6 +20,7 @@ main()	/* lower: convert input to lower case */
 		putchar(tolower(c));
 	return 0;
 }
+
 //7.2 formatted output - printf
 #include <stdio.h>
 
@@ -39,6 +39,7 @@ main()	/* format = min-width.precision */
 
 	return 0;
 }
+
 //7.3 variable-length argument lists
 #include <stdarg.h>
 /* minprintf: minimal printf with variable argument list */
@@ -78,6 +79,7 @@ void minprintf(char *fmt, ...)
 
 		va_end(ap);
 }
+
 //7.4 formatted input - scanf
 #include <stdio.h>
 
