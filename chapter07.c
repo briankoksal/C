@@ -10,6 +10,7 @@
 //7.8 miscellanesous functions
 
 //7.1 standard input and output
+
 #include <stdio.h>
 #include <ctype.h>
 

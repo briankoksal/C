@@ -1229,6 +1229,3 @@ Exercise 5-18. Make dcl recover from input errors.
 Exercise 5-19. Modify undcl so that it does not add redundant parentheses to declarations.
 Exercise 5-20. Expand dcl to handle declarations with function argument types, qualifiers like const, and so on.
 
-
-
-
