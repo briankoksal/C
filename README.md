@@ -2,11 +2,12 @@ The C Programming Language
 ==========================
 **Second Edition**
 
-Brian W. Kernighan and Dennis M. Ritchie
+[Brian W. Kernighan][1] and
+[Dennis M. Ritchie][2]
 
-CONTENTS
+**CONTENTS**
 
-chapter01 a tutorial introduction
+Chapter01 -- a tutorial introduction
 ---------------------------------
 1.1 getting started
 1.2 variables and arithmetic expressions
@@ -19,7 +20,7 @@ chapter01 a tutorial introduction
 1.9 character arrays
 1.10 external variables and scope
 
-chapter02 types, operators and expressions
+Chapter02 -- types, operators and expressions
 ------------------------------------------
 2.1 variable
 2.2 data types and sizes
@@ -34,7 +35,7 @@ chapter02 types, operators and expressions
 2.11 conditional expressions
 2.12 precedence and order of evaluation
 
-chapter03 control flow
+Chapter03 -- control flow
 ----------------------
 3.1 statements and blocks
 3.2 if-else
@@ -45,7 +46,7 @@ chapter03 control flow
 3.7 break and continue
 3.8 goto and labels
 
-chapter04 functions and program structure
+Chapter04 -- functions and program structure
 -----------------------------------------
 4.1 basics of functions
 4.2 functions returning non-integers
@@ -59,7 +60,7 @@ chapter04 functions and program structure
 4.10 recursion
 4.11 the c preprocessor
 
-chapter05 pointers and arrays
+Chapter 5 -- pointers and arrays
 -----------------------------
 5.1 pointers and addresses
 5.2 pointers and function arguments
@@ -74,7 +75,7 @@ chapter05 pointers and arrays
 5.11 pointers to functions
 5.12 complicated declarations
 
-chapter06 structures
+Chapter 6 -- structures
 --------------------
 6.1 basics of structures
 6.2 structures and functions
@@ -86,7 +87,7 @@ chapter06 structures
 6.8 unions
 6.9 bit-fields
 
-chapter07 input and output
+Chapter 7 -- input and output
 --------------------------
 7.1 standard input and output
 7.2 formatted output - printf
@@ -97,7 +98,7 @@ chapter07 input and output
 7.7 line input and output
 7.8 miscellanesous functions
 
-chapter08 the unix system interface
+Chapter 8 -- the unix system interface
 -----------------------------------
 8.1 file descriptors
 8.2 low level I/O - read and write
@@ -106,4 +107,9 @@ chapter08 the unix system interface
 8.5 example - an implementation of fopen and getc
 8.6 example - listing directories
 8.7 example - a storage allocator
+
+
+[1]: https://en.wikipedia.org/wiki/Brian_Kernighan "K"
+[2]: https://en.wikipedia.org/wiki/Dennis_Ritchie "R"
+
 
