@@ -1,13 +1,13 @@
-C
-=
+The C Programming Language
+==========================
+**Second Edition**
 
-The C Programming Language, Second Edition. 
+Brian W. Kernighan and Dennis M. Ritchie
 
-By Brian W. Kernighan and Dennis M. Ritchie. 
-
-contents
+CONTENTS
 
 chapter01 a tutorial introduction
+---------------------------------
 1.1 getting started
 1.2 variables and arithmetic expressions
 1.3 the for statement
@@ -20,6 +20,7 @@ chapter01 a tutorial introduction
 1.10 external variables and scope
 
 chapter02 types, operators and expressions
+------------------------------------------
 2.1 variable
 2.2 data types and sizes
 2.3 constants
@@ -34,6 +35,7 @@ chapter02 types, operators and expressions
 2.12 precedence and order of evaluation
 
 chapter03 control flow
+----------------------
 3.1 statements and blocks
 3.2 if-else
 3.3 else-if
@@ -44,6 +46,7 @@ chapter03 control flow
 3.8 goto and labels
 
 chapter04 functions and program structure
+-----------------------------------------
 4.1 basics of functions
 4.2 functions returning non-integers
 4.3 external variables
@@ -57,6 +60,7 @@ chapter04 functions and program structure
 4.11 the c preprocessor
 
 chapter05 pointers and arrays
+-----------------------------
 5.1 pointers and addresses
 5.2 pointers and function arguments
 5.3 pointers and arrays
@@ -71,6 +75,7 @@ chapter05 pointers and arrays
 5.12 complicated declarations
 
 chapter06 structures
+--------------------
 6.1 basics of structures
 6.2 structures and functions
 6.3 arrays of structures
@@ -82,6 +87,7 @@ chapter06 structures
 6.9 bit-fields
 
 chapter07 input and output
+--------------------------
 7.1 standard input and output
 7.2 formatted output - printf
 7.3 variable-length argument lists
@@ -92,6 +98,7 @@ chapter07 input and output
 7.8 miscellanesous functions
 
 chapter08 the unix system interface
+-----------------------------------
 8.1 file descriptors
 8.2 low level I/O - read and write
 8.3 open, creat, close and unlink
@@ -99,5 +106,4 @@ chapter08 the unix system interface
 8.5 example - an implementation of fopen and getc
 8.6 example - listing directories
 8.7 example - a storage allocator
-
 

@@ -36,18 +36,22 @@ A pointer is a group of cells (often two or four) that can hold an address.
 So if c is a char and p is a pointer that points to it, we could represent the situation this way:
 
 The unary operator & gives the address of an object, so the statement
+
 	p = &c;
+
 assigns the address of c to the variable p, and p is said to "point to" c.
 The & operator only applies to objects in memory: variables and array elements. It cannot be applied to expressions, constants, or register variables.
 
 The unary operator * is the indirection or dereferencing operator; when applied to a pointer, it accesses the object the pointer points to.
 Suppose that x and y are integers and ip is a pointer to int. This artificial sequence shows how to declare a pointer and how to use & and *:
+
 	int x = 1, y =2, z[10];
 	int *ip; 	/* ip is a pointer to int */
 	ip = &x;	/* ip now points to x */
 	y = *ip;	/* y is now 1 */
 	*ip = 0;	/* x is now 0 */
 	ip = &z[0]; /* ip now points to z[0] */
+
 The declaration of x, y, and z are what we've seen all along.
 The declaration of the pointer ip,
 	int *ip;
@@ -85,6 +89,7 @@ Since C passes arguments to functions by value, there is no direct way for the c
 For instance, a sorting routine might exchange two out-of-order arguments with a function called swap. It is not enough to write
 	swap(a, b);
 where the swap function is defined as
+
 	void swap(int x, int y) /* WRONG */
 	{
 		int temp;
@@ -92,6 +97,7 @@ where the swap function is defined as
 		x = y;
 		y = temp;
 	}
+
 Because of call by value, swap can't affect the arguments a and b in the routine that called it.
 The function above swaps copies of a and b.
 
@@ -199,7 +205,8 @@ A pointer is a variable, so pa=a and pa++ are legal. But an array name is not a 
 
 When an array name is passed to a function, what is passed is the location of the initial element.
 Within the called function, this argument is a local variable, and so an array name parameter is a pointer, that is, a variable containing an address.
-We can use this fact to write another version of strlen, which computes the length of a string.
+We can use this fact to write another version of `strlen`, which computes the length of a string.
+
 	/* strlen: return length of string s */
 	int strlen(char *s)
 	{
@@ -208,11 +215,14 @@ We can use this fact to write another version of strlen, which computes the leng
 			n++;
 		return n;
 	}
-Since s is a pointer, incrementing it is perfectly legal; s++ has no effect on the character string in the function that called strlen, but merely increments strlen's private copy of the pointer.
+
+Since s is a pointer, incrementing it is perfectly legal; s++ has no effect on the character string in the function that called `strlen`, but merely increments strlen's private copy of the pointer.
 That means that calls like
+
 	strlen("hello, world");	/* string constant */
 	strlen(array); 			/* char array[100]; */
 	strlen(ptr); 			/* char *ptr; */
+
 all work.
 
 As formal parameters in a function definition,
@@ -241,7 +251,7 @@ Of course, it is illegal to refer to objects that are not within the array bound
 
 5.4 Address Arithmetic
 
-If p is a pointer to some element of an array, then p++ increments p to point to the next element, and p+=i increments it to point i elements beyond where it currently does.
+If `p` is a pointer to some element of an array, then `p++` increments `p` to point to the next element, and `p += i` increments it to point `i` elements beyond where it currently does.
 These and similar constructions are the simples forms of pointer or address arithmetic.
 
 C is consistent and regular in its approach to address arithmetic; its integration of pointers, arrays, and address arithmetic is one of the strengths of the language.
@@ -263,33 +273,41 @@ If so, alloc returns the current value of allocp (i.e., the beginning of the fre
 If there is no room, alloc returns zero. afree(p) merely sets allocp to p if p is inside allocbuf.
 
 
-#define ALLOCSIZE 10000 			/* size of available space */
-static char allocbuf[ALLOCSIZE]; 	/* storage for alloc */
-static char *allocp = allocbuf; 	/* next free position */
+```
+	#define ALLOCSIZE 10000 			/* size of available space */
+	static char allocbuf[ALLOCSIZE]; 	/* storage for alloc */
+	static char *allocp = allocbuf; 	/* next free position */
 
-char *alloc(int n) /* return pointer to n characters */
-{
-	if (allocbuf + ALLOCSIZE - allocp >= n) { 	/* it fits */
-		allocp += n;
-		return allocp - n;	/* old p */
-	} else 	/* not enough room */
-		return 0;
-}
-void afree(char *p) /* free storage pointed to by p */
-{
-	if (p >= allocbuf && p < allocbuf + ALLOCSIZE)
-	allocp = p;
-}
+	char *alloc(int n) /* return pointer to n characters */
+	{
+		if (allocbuf + ALLOCSIZE - allocp >= n) { 	/* it fits */
+			allocp += n;
+			return allocp - n;	/* old p */
+		} else 	/* not enough room */
+			return 0;
+	}
+	void afree(char *p) /* free storage pointed to by p */
+	{
+		if (p >= allocbuf && p < allocbuf + ALLOCSIZE)
+		allocp = p;
+	}
+```
 
 In general a pointer can be initialized just as any other variable can, though normally the only meaningful values are zero or an expression involving the address of previously defined data of appropriate type.
 The declaration
+
 	static char *allocp = allocbuf;
+
 defines allocp to be a character pointer and initializes it to point to the beginning of allocbuf, which is the next free position when the program starts.
 This could also have been written
+
 	static char *allocp = &allocbuf[0];
+
 since the array name is the address of the zeroth element.
 The test
+
 	if (allocbuf + ALLOCSIZE - allocp >= n) { /* it fits */
+
 checks if there's enough room to satisfy a request for n characters. If there is, the new value of allocp would be at most one beyond the end of allocbuf.
 If the request can be satisfied, alloc returns a pointer to the beginning of a block of characters (notice the declaration of the function itself).
 If not, alloc must return some signal that there is no space left. C guarantees that zero is never a valid address for data, so a return value of zero can be used to signal an abnormal event, in this case no space.
@@ -298,10 +316,15 @@ Pointers and integers are not interchangeable. Zero is the sole exception: the c
 The symbolic constant NULL is often used in place of zero, as a mnemonic to indicate more clearly that this is a special value for a pointer. NULL is defined in <stdio.h>. We will use NULL henceforth.
 
 Tests like
+
 	if (allocbuf + ALLOCSIZE - allocp >= n) { /* it fits */
+
 and
+
 	if (p >= allocbuf && p < allocbuf + ALLOCSIZE)
+
 show several important facets of pointer arithmetic.
+
 First, pointers may be compared under certain circumstances. If p and q point to members of the same array, then relations like ==, !=, <, >=, etc., work properly. For example,
 	p < q
 is true if p points to an earlier element of the array than q does.
@@ -311,7 +334,9 @@ But the behavior is undefined for arithmetic or comparisons with pointers that d
 
 Second, we have already observed that a pointer and an integer may be added or subtracted.
 The construction
+
 	p + n
+
 means the address of the n-th object beyond the one p currently points to.
 This is true regardless of the kind of object p points to; n is scaled according to the size of the objects p points to, which is determined by the declaration of p.
 If an int is four bytes, for example, the int will be scaled by four.
@@ -319,6 +344,7 @@ If an int is four bytes, for example, the int will be scaled by four.
 Pointer subtraction is also valid: if p and q point to elements of the same array, and p < q, then q-p+1 is the number of elements from p to q inclusive.
 This fact can be used to write yet another version of strlen:
 
+```
 /* strlen: return length of string s */
 int strlen(char *s)
 {
@@ -327,6 +353,7 @@ int strlen(char *s)
 	p++;
 	return p - s;
 }
+```
 
 In its declaration, p is initialized to s, that is, to point to the first character of the string. In the while loop, each character in turn is examined until the '\0' at the end is seen.
 Because p points to characters, p++ advances p to the next character each time, and p-s gives the number of characters advanced over, that is, the string length.
@@ -362,8 +389,10 @@ assigns to pmessage a pointer to the character array. This is not a string copy;
 C does not provide any operators for processing an entire string of characters as a unit.
 
 There is an important difference between these definitions:
+
 	char amessage[] = "now is the time"; /* an array */
 	char *pmessage = "now is the time";  /* a pointer */
+
 amessage is an array, just big enough to hold the sequence of characters and '\0' that initializes it.
 Individual characters within the array may be changed but amessage will always refer to the same storage.
 On the other hand, pmessage is a pointer, initialized to point to a string constant; the pointer may subsequently be modified to point elsewhere, but the result is undefined if you try to modify the string contents.
@@ -371,6 +400,8 @@ On the other hand, pmessage is a pointer, initialized to point to a string const
 We will illustrate more aspects of pointers and arrays by studying versions of two useful functions adapted from the standard library.
 The first function is strcpy(s,t), which copies the string t to the string s. It would be nice just to say s=t but this copies the pointer, not the characters.
 To copy the characters, we need a loop. The array version first:
+
+```
 /* strcpy: copy t to s; array subscript version */
 void strcpy(char *s, char *t)
 {
@@ -379,6 +410,8 @@ void strcpy(char *s, char *t)
 	while ((s[i] = t[i]) != '\0')
 		i++;
 }
+```
+
 For contrast, here is a version of strcpy with pointers:
 
 /* strcpy: copy t to s; pointer version */
@@ -487,6 +520,7 @@ Since the input function can only cope with a finite number of input lines, it c
 
 The output routine only has to print the lines in the order in which they appear in the array of pointers.
 
+```
 #include <stdio.h>
 #include <string.h>
 
@@ -539,6 +573,7 @@ void writelines(char *lineptr[], int nlines)
 	for (i = 0; i < nlines; i++)
 		printf("%s\n", lineptr[i]);
 }
+```
 
 The function getline is from Section 1.9.
 
