@@ -8,7 +8,7 @@ The C Programming Language
 **CONTENTS**
 
 Chapter 1 -- a tutorial introduction
----------------------------------
+------------------------------------
 - 1.1 getting started
 - 1.2 variables and arithmetic expressions
 - 1.3 the for statement
@@ -21,7 +21,7 @@ Chapter 1 -- a tutorial introduction
 - 1.10 external variables and scope
 
 Chapter 2 -- types, operators and expressions
-------------------------------------------
+---------------------------------------------
 - 2.1 variable
 - 2.2 data types and sizes
 - 2.3 constants
@@ -107,6 +107,13 @@ Chapter 8 -- the unix system interface
 - 8.5 example - an implementation of fopen and getc
 - 8.6 example - listing directories
 - 8.7 example - a storage allocator
+
+
+
+Reference
+---------
+[K][1]
+[R][2]
 
 
 [1]: https://en.wikipedia.org/wiki/Brian_Kernighan "K"
