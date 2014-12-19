@@ -1,9 +1,6 @@
-# Makefile for general c and c++ complation
-# Postfix .c is used for c source file
-# Postfix .cc is used for C++ source file under the relative old ISO standard
-# Postfix .cpp is used for C++ source file under C++11 standard
+OS = $(shell uname)
 
-MAIN = test.exe
+MAIN = test01.exe
 main: $(MAIN)
 
 sourcehome = .
@@ -20,12 +17,20 @@ executable11 = $(addsuffix .exe, $(sourcelist11))
 all: $(executable) $(executablecc)
 a11: $(executable11)
 
+ifeq ($(OS), Darwin)
 GC = gcc
 CC = g++
 CL = clang++
+WARN = -Weverything
+else ifeq ($(OS), Linux)
+GC = gcc -std=gnu99
+CC = g++
+CL = g++
+WARN = -Wall
+endif
 
-CFLAGS = -Weverything
-C11FLAGS = -std=c++11 -stdlib=libc++ -Weverything
+CFLAGS = $(WARN)
+C11FLAGS = -std=c++11 -stdlib=libc++ $(WARN)
 
 %.exe: %.c
 	$(GC) $(CFLAGS) -o $@ $<
@@ -36,8 +41,8 @@ C11FLAGS = -std=c++11 -stdlib=libc++ -Weverything
 %.exe: %.cpp
 	$(CL) $(C11FLAGS) -o $@ $<
 
+
 .PHONY: clean
 
 clean:
-	rm -rf *.exe
-
+	rm -rf *.exe *.o

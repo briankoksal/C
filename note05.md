@@ -1,18 +1,22 @@
-5.1 Pointers and Addresses
-5.2 Pointers and Function Arguments
-5.3 Pointers and Arrays
-5.4 Address Arithmetic
-5.5 Character Pointers and Functions
-5.6 Pointer Arrays; Pointers to Pointers
-5.7 Multi-dimensional Arrays
-5.8 Initialization of Pointer Arrays
-5.9 Pointers vs. Multi-dimensional Arrays
-5.10 Command-line Arguments
-5.11 Pointers to Functions
-5.12 Complicated Declarations
+
+**Content**
+
+- 5.1 Pointers and Addresses
+- 5.2 Pointers and Function Arguments
+- 5.3 Pointers and Arrays
+- 5.4 Address Arithmetic
+- 5.5 Character Pointers and Functions
+- 5.6 Pointer Arrays; Pointers to Pointers
+- 5.7 Multi-dimensional Arrays
+- 5.8 Initialization of Pointer Arrays
+- 5.9 Pointers vs. Multi-dimensional Arrays
+- 5.10 Command-line Arguments
+- 5.11 Pointers to Functions
+- 5.12 Complicated Declarations
 
 
 Chapter 5 - Pointers and Arrays
+===============================
 
 A pointer is a variable that contains the address of a variable.
 Pointers are much used in C, partly because they are sometimes the only way to express a computation, and partly because they usually lead to more compact and efficient code than can be obtained in other ways.
@@ -28,6 +32,7 @@ In addition, the type void * (pointer to void) replaces char * as the proper typ
 
 
 5.1 Pointers and Addresses
+--------------------------
 
 Let us begin with a simplified picture of how memory is organized.
 A typical machine has an array of consecutively numbered or addressed memory cells that may be manipulated individually or in contiguous groups.
@@ -84,6 +89,7 @@ copies the contents of ip into iq, thus making iq point to whatever ip pointed t
 
 
 5.2 Pointers and Function Arguments
+-----------------------------------
 
 Since C passes arguments to functions by value, there is no direct way for the called function to alter a variable in the calling function.
 For instance, a sorting routine might exchange two out-of-order arguments with a function called swap. It is not enough to write
@@ -165,6 +171,7 @@ Exercise 5-2. Write getfloat, the floating-point analog of getint. What type doe
 
 
 5.3 Pointers and Arrays
+-----------------------
 
 In C, there is a strong relationship between pointers and arrays, strong enough that pointers and arrays should be discussed simultaneously.
 Any operation that can be achieved by array subscripting can also be done with pointers. The pointer version will in general be faster but, at least to the uninitiated, somewhat harder to understand.
@@ -250,6 +257,7 @@ Of course, it is illegal to refer to objects that are not within the array bound
 
 
 5.4 Address Arithmetic
+----------------------
 
 If `p` is a pointer to some element of an array, then `p++` increments `p` to point to the next element, and `p += i` increments it to point `i` elements beyond where it currently does.
 These and similar constructions are the simples forms of pointer or address arithmetic.
@@ -371,6 +379,7 @@ It is not legal to add two pointers, or to multiply or divide or shift or mask t
 
 
 5.5 Character Pointers and Functions
+------------------------------------
 
 A string constant, written as "I am a string" is an array of characters.
 In the internal representation, the array is terminated with the null character '\0' so that programs can find the end.
@@ -494,6 +503,7 @@ Exercise 5-6. Rewrite appropriate programs from earlier chapters and exercises w
 
 
 5.6 Pointer Arrays; Pointers to Pointers
+----------------------------------------
 
 Since pointers are variables themselves, they can be stored in arrays just as other variables can.
 Let us illustrate by writing a program that will sort a set of text lines into alphabetic order, a stripped-down version of the UNIX program sort.
@@ -714,6 +724,7 @@ Exercise 5-8. There is no error checking in day_of_year or month_day. Remedy thi
 
 
 5.8 Initialization of Pointer Arrays
+------------------------------------
 
 Consider the problem of writing a function month_name(n), which returns a pointer to a character string containing the name of the n-th month.
 This is an ideal application for an internal static array.
@@ -742,6 +753,7 @@ Since the size of the array name is not specified, the compiler counts the initi
 
 
 5.9 Pointers vs. Multi-dimensional Arrays
+-----------------------------------------
 
 Newcomers to C are sometimes confused about the difference between a two-dimensional array and an array of pointers, such as name in the example above.
 Given the definitions
@@ -763,6 +775,7 @@ Exercise 5-9. Rewrite the routines day_of_year and month_day with pointers inste
 
 
 5.10 Command-line Arguments
+---------------------------
 
 In environments that support C, there is a way to pass command-line arguments or parameters to a program when it begins executing.
 When main is called, it is called with two arguments.
@@ -920,6 +933,7 @@ Write the program so it makes the best use of available storage; lines should be
 
 
 5.11 Pointers to Functions
+--------------------------
 
 In C, a function itself is not a variable, but it is possible to define pointers to functions, which can be assigned, placed in arrays, passed to functions, returned by functions, and so on.
 We will illustrate this by modifying the sorting procedure written earlier in this chapter so that if the optional argument -n is given, it will sort the input lines numerically instead of lexicographically.
@@ -1044,6 +1058,7 @@ Exercise 5-17. Add a field-searching capability, so sorting may bee done on fiel
 
 
 5.12 Complicated Declarations
+-----------------------------
 
 C is sometimes castigated for the syntax of its declarations, particularly ones that involve pointers to functions.
 The syntax is an attempt to make the declaration and the use agree;
@@ -1182,6 +1197,7 @@ main() /* convert declaration to words */
 
 The function gettoken skips blanks and tabs, then finds the next token in the input; a "token" is a name, a pair of parentheses, a pair of brackets perhaps including a number, or any other single character.
 
+```
 int gettoken(void) /* return next token */
 {
 	int c, getch(void);
@@ -1213,8 +1229,9 @@ int gettoken(void) /* return next token */
 	} else
 		return tokentype = c;
 }
+```
 
-getch and ungetch are discussed in Chapter 4.
+`getch` and `ungetch` are discussed in Chapter 4.
 
 
 Going in the other direction is easier, especially if we do not worry about generating redundant parentheses. The program undcl converts a word description like ``x is a function returning a
@@ -1234,6 +1251,7 @@ to
 
 The abbreviated input syntax lets us reuse the gettoken function. undcl also uses the same external variables as dcl does.
 
+```
 /* undcl: convert word descriptions to declarations */
 main()
 {
@@ -1259,6 +1277,7 @@ main()
 	}
 	return 0;
 }
+```
 
 Exercise 5-18. Make dcl recover from input errors.
 Exercise 5-19. Modify undcl so that it does not add redundant parentheses to declarations.
