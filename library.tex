@@ -1,0 +1,75 @@
+
+\chapter{Standard Library}
+
+The functions, types and macros of the standard library are declared in standard headers:
+\begin{lstlisting}[basicstyle=\ttfamily\small, keywordstyle=\color{black}, stringstyle=\color{black}]
+	<assert.h> 	<float.h> 	<math.h> 	<stdarg.h> 	<stdlib.h>
+	<ctype.h>  	<limits.h> 	<setjmp.h> 	<stddef.h> 	<string.h>
+	<errno.h>  	<locale.h> 	<signal.h> 	<stdio.h> 	<time.h>
+\end{lstlisting}
+A header can be accessed by
+\begin{lstlisting}
+	#include <header>
+\end{lstlisting}
+Headers may be included in any order and any number of times.
+A header must be included outside of any external declaration or definition and before any use of anything it declares.
+A header need not be a source file.
+External identifiers that begin with an underscore are reserved for use by the library, as are all other identifiers that begin with an underscore and an upper-case letter or another underscore.
+
+\section{Input and Output: \code{<stdio.h>}}
+
+The input and output functions, types, and macros defined in \code{<stdio.h>} represent nearly one third of the library.
+
+A \emph{stream} is a source or destination of data that may be associated with a disk or other peripheral.
+The library supports text streams and binary streams, although on some systems, notably UNIX, these are identical.
+A text stream is a sequence of lines; each line has zero or more characters and is terminated by \code{'\textbackslash n'}.
+An environment may need to convert a text stream to or from some other representation (such as mapping \code{'\textbackslash n'} to carriage return and linefeed).
+A binary stream is a sequence of unprocessed bytes that record internal data, with the property that if it is written, then read back on the same system, it will compare equal.
+
+A stream is connected to a file or device by \emph{opening} it; the connection is broken by \emph{closing} the stream.
+Opening a file returns a pointer to an object of type \code{FILE}, which records whatever information is necessary to control the stream.
+We will use ``file pointer'' and ``stream'' interchangeably when there is no ambiguity.
+When a program begins execution, the three streams \code{stdin}, \code{stdout}, and \code{stderr} are already open.
+
+\subsection{File Operations}
+% \subsection{Formatted Output}
+% \subsection{Formatted Input}
+% \subsection{Character Input and Output Functions}
+% \subsection{Direct Input and Output Functions}
+% \subsection{File Positioning Functions}
+% \subsection{Error Functions}
+
+\section{Character Class Tests: \code{<ctype.h>}}
+The header \code{<ctype.h>} declares functions for testing characters.
+For each function, the argument list is an \code{int}, whose value must be \code{EOF} or representable as an \code{unsigned char}, and the return value is an \code{int}.
+The functions return non-zero (true) if the argument \code{c} satisfies the condition described, and zero if not.
+\begin{lstlisting}
+	isalnum(c) 	//isalpha(c) or isdigit(c) is true
+	isalpha(c) 	//isupper(c) or islower(c) is true
+	iscntrl(c) 	//control character
+	isdigit(c) 	//decimal digit
+	isgraph(c) 	//printing character except space
+	islower(c) 	//lower-case letter
+	isprint(c) 	//printing character including space
+	ispunct(c) 	//printing character except space or letter or digit
+	isspace(c) 	//space, formfeed, newline, carriage return, tab, vertical tab
+	isupper(c) 	//upper-case letter
+	isxdigit(c) //hexadecimal digit
+\end{lstlisting}
+In addition, there are two functions that convert the case of letters:
+\begin{lstlisting}
+	int tolower(c) 	// convert c to lower case
+	int toupper(c) 	// convert c to upper case
+\end{lstlisting}
+If \code{c} is an upper-case letter,
+\code{tolower(c)} returns the corresponding lower-case letter, \code{toupper(c)} returns the corresponding upper-case letter; otherwise it returns \code{c}.
+
+% \section{String Functions: \code{<string.h>}}
+% \section{Mathematical Functions: \code{<math.h>}}
+% \section{Utility Functions: \code{<stdlib.h>}}
+% \section{Diagnostics: \code{<assert.h>}}
+% \section{Variable Argument Lists: \code{<stdarg.h>}}
+% \section{Non-local Jumps: \code{<setjmp.h>}}
+% \section{Signals: \code{<signal.h>}}
+% \section{Date and Time Functions: \code{<time.h>}}
+% \section{Implementation-defined Limits: \code{<limits.h>} and \code{<float.h>}}

@@ -1,5 +1,6 @@
 
-**Content**
+Contents
+========
 
 - 5.1 Pointers and Addresses
 - 5.2 Pointers and Function Arguments
@@ -1251,7 +1252,7 @@ to
 
 The abbreviated input syntax lets us reuse the gettoken function. undcl also uses the same external variables as dcl does.
 
-```
+```C
 /* undcl: convert word descriptions to declarations */
 main()
 {

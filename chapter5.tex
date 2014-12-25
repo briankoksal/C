@@ -1,0 +1,1478 @@
+
+\chapter{Pointers and Arrays}
+
+
+A pointer is a variable that contains the address of a variable.
+Pointers are much used in C, partly because they are sometimes the only way to express a computation, and partly because they usually lead to more compact and efficient code than can be obtained in other ways.
+Pointers and arrays are closely related; this chapter also explores this relationship and shows how to exploit it.
+
+Pointers have been lumped with the \code{goto} statement as a marvelous way to create impossible-to-understand programs.
+This is certainly true when they are used carelessly, and it is easy to create pointers that point somewhere unexpected.
+With discipline, however, pointers can also be used to achieve clarity and simplicity. This is the aspect that we will try to illustrate.
+
+The main change in ANSI C is to make explicit the rules about how pointers can be manipulated, in effect mandating what good programmers already practice and good compilers already enforce.
+In addition, the type \code{void *} (pointer to void) replaces \code{char *} as the proper type for a generic pointer.
+
+
+
+\section{Pointers and Addresses}
+
+
+Let us begin with a simplified picture of how memory is organized.
+A typical machine has an array of consecutively numbered or addressed memory cells that may be manipulated individually or in contiguous groups.
+One common situation is that any byte can be a \code{char}, a pair of one-byte cells can be treated as a \code{short} integer, and four adjacent bytes form a \code{long}.
+A pointer is a group of cells (often two or four) that can hold an address.
+So if \code{c} is a \code{char} and p is a pointer that points to it, we could represent the situation this way:
+
+
+The unary operator \code{\&} gives the address of an object, so the statement
+\begin{lstlisting}
+	p = &c;
+\end{lstlisting}
+assigns the address of \code{c} to the variable \code{p}, and \code{p} is said to ``point to'' \code{c}.
+The \code{\&} operator only applies to objects in memory: variables and array elements. It cannot be applied to expressions, constants, or \code{register} variables.
+
+The unary operator \code{*} is the \emph{indirection} or \emph{dereferencing} operator; when applied to a pointer, it accesses the object the pointer points to.
+Suppose that \code{x} and \code{y} are integers and \code{ip} is a pointer to \code{int}.
+This artificial sequence shows how to declare a pointer and how to use \code{1\&} and \code{*}:
+\begin{lstlisting}
+	int x = 1, y =2, z[10];
+	int *ip; 		/* ip is a pointer to int */
+	ip = &x;		/* ip now points to x */
+	y = *ip;		/* y is now 1 */
+	*ip = 0;		/* x is now 0 */
+	ip = &z[0]; 	/* ip now points to z[0] */
+\end{lstlisting}
+The declaration of \code{x}, \code{y}, and \code{z} are what we've seen all along.
+The declaration of the pointer \code{ip},
+\begin{lstlisting}
+	int *ip;
+\end{lstlisting}
+is intended as a mnemonic; it says that the expression \code{*ip} is an \code{int}.
+The syntax of the declaration for a variable mimics the syntax of expressions in which the variable might appear. This reasoning applies to function declarations as well.
+For example,
+\begin{lstlisting}
+	double *dp, atof(char *);
+\end{lstlisting}
+says that in an expression \code{*dp} and \code{atof(s)} have values of \code{double}, and that the argument of \code{atof} is a pointer to \code{char}.
+
+
+You should also note the implication that a pointer is constrained to point to a particular kind of object: every pointer points to a specific data type.
+(There is one exception: a ``pointer to void'' is used to hold any type of pointer but cannot be dereferenced itself. We'll come back to it in Section 5.11.)
+
+If \code{ip} points to the integer \code{x}, then \code{*ip} can occur in any context where \code{x} could, so
+\begin{lstlisting}
+	*ip = *ip + 10;
+\end{lstlisting}
+increments \code{*ip} by \code{10}.
+
+The unary operators \code{*} and \code{\&} bind more tightly than arithmetic operators, so the assignment
+\begin{lstlisting}
+	y = *ip + 1
+\end{lstlisting}
+takes whatever \code{ip} points at, adds \code{1}, and assigns the result to \code{y}, while
+\begin{lstlisting}
+	*ip += 1
+\end{lstlisting}
+increments what \code{ip} points to, as do
+\begin{lstlisting}
+	++*ip
+\end{lstlisting}
+and
+\begin{lstlisting}
+	(*ip)++
+\end{lstlisting}
+The parentheses are necessary in this last example; without them, the expression would increment \code{ip} instead of what it points to, because unary operators like \code{*} and \code{++} associate right to left.
+
+Finally, since pointers are variables, they can be used without dereferencing. For example, if \code{iq} is another pointer to \code{int},
+\begin{lstlisting}
+	iq = ip
+\end{lstlisting}
+copies the contents of \code{ip} into \code{iq}, thus making \code{iq} point to whatever \code{ip} pointed to.
+
+
+
+\section{Pointers and Function Arguments}
+
+
+Since C passes arguments to functions by value, there is no direct way for the called function to alter a variable in the calling function.
+For instance, a sorting routine might exchange two out-of-order arguments with a function called \code{swap}. It is not enough to write
+\begin{lstlisting}
+	swap(a, b);
+\end{lstlisting}
+where the \code{swap} function is defined as
+\begin{lstlisting}
+	void swap(int x, int y) 	/* WRONG */
+	{
+		int temp;
+		temp = x;
+		x = y;
+		y = temp;
+	}
+\end{lstlisting}
+Because of \emph{call by value}, \code{swap} can't affect the arguments \code{a} and \code{b} in the routine that called it.
+The function above swaps copies of \code{a} and \code{b}.
+
+
+The way to obtain the desired effect is for the calling program to pass \emph{pointers} to the values to be changed:
+\begin{lstlisting}
+	swap(&a, &b);
+\end{lstlisting}
+Since the operator \code{\&} produces the address of a variable, \code{\&a} is a pointer to \code{a}.
+In \code{swap} itself, the parameters are declared as pointers, and the operands are accessed indirectly through them.
+\begin{lstlisting}
+	void swap(int *px, int *py) /* interchange *px and *py */
+	{
+		int temp;
+		temp = *px;
+		*px = *py;
+		*py = temp;
+	}
+\end{lstlisting}
+Pictorially:
+
+
+Pointer arguments enable a function to access and change objects in the function that called it.
+As an example, consider a function \code{getint} that performs free-format input conversion by breaking a stream of characters into integer values, one integer per call.
+\code{getint} has to return the value it found and also signal end of file when there is no more input.
+These values have to be passed back by separate paths, for no matter what value is used for \code{EOF}, that could also be the value of an input integer.
+
+One solution is to have \code{getint} return the end of file status as its function value, while using a pointer argument to store the converted integer back in the calling function.
+This is the scheme used by \code{scanf} as well; see Section 7.4.
+
+The following loop fills an array with integers by calls to \code{getint}:
+\begin{lstlisting}
+	int n, array[SIZE], getint(int *);
+	for (n = 0; n < SIZE && getint(&array[n]) != EOF; n++)
+		;
+\end{lstlisting}
+Each call sets \code{array[n]} to the next integer found in the input and increments \code{n}.
+Notice that it is essential to pass the address of \code{array[n]} to \code{getint}. Otherwise there is no way for \code{getint} to communicate the converted integer back to the caller.
+
+Our version of \code{getint} returns \code{EOF} for end of file, zero if the next input is not a number, and a positive value if the input contains a valid number.
+\begin{lstlisting}
+
+#include <ctype.h>
+
+int getch(void);
+void ungetch(int);
+
+/* getint: get next integer from input into *pn */
+int getint(int *pn)
+{
+	int c, sign;
+	while (isspace(c = getch())) /* skip white space */
+		;
+	if (!isdigit(c) && c != EOF && c != '+' && c != '-') {
+		ungetch(c); /* it is not a number */
+		return 0;
+	}
+	sign = (c == '-') ? -1 : 1;
+	if (c == '+' || c == '-')
+		c = getch();
+	for (*pn = 0; isdigit(c), c = getch())
+		*pn = 10 * *pn + (c - '0');
+	*pn *= sign;
+	if (c != EOF)
+		ungetch(c);
+	return c;
+}
+
+\end{lstlisting}
+
+Throughout \code{getint}, \code{*pn} is used as an ordinary \code{int} variable.
+We have also used \code{getch} and \code{ungetch} (described in Section 4.3) so the one extra character that must be read can be pushed back onto the input.
+\newline
+
+\begin{ExerciseList}
+\Exercise As written, \code{getint} treats a + or - not followed by a digit as a valid representation of zero. Fix it to push such a character back on the input.
+\Exercise Write \code{getfloat}, the floating-point analog of \code{getint}. What type does \code{getfloat} return as its function value?
+\end{ExerciseList}
+
+\section{Pointers and Arrays}
+In C, there is a strong relationship between pointers and arrays, strong enough that pointers and arrays should be discussed simultaneously.
+Any operation that can be achieved by array subscripting can also be done with pointers. The pointer version will in general be faster but, at least to the uninitiated, somewhat harder to understand.
+The declaration
+\begin{lstlisting}
+    int a[10];
+\end{lstlisting}
+defines an array of size 10, that is, a block of 10 consecutive objects named \code{a[0]}, \code{a[1]}, ..., \code{a[9]}.
+
+The notation \code{a[i]} refers to the i-th element of the array. If \code{pa} is a pointer to an integer, declared as
+\begin{lstlisting}
+    int *pa;
+\end{lstlisting}
+then the assignment
+\begin{lstlisting}
+    pa = &a[0];
+\end{lstlisting}
+sets \code{pa} to point to element zero of \code{a}; that is, \code{pa} contains the address of \code{a[0]}.
+
+Now the assignment
+\begin{lstlisting}
+    x = *pa;
+\end{lstlisting}
+will copy the contents of \code{a[0]} into \code{x}.
+If \code{pa} points to a particular element of an array, then by definition \code{pa+1} points to the next element, \code{pa+i} points i elements after \code{pa}, and \code{pa-i} points \code{i} elements before.
+Thus, if \code{pa} points to \code{a[0]},
+\begin{lstlisting}
+    *(pa+1)
+\end{lstlisting}
+refers to the contents of \code{a[1]}, \code{pa+i} is the address of \code{a[i]}, and \code{*(pa+i)} is the contents of \code{a[i]}.
+
+These remarks are true regardless of the type or size of the variables in the array \code{a}.
+The meaning of ``adding 1 to a pointer'', and by extension, all pointer arithmetic, is that \code{pa+1} points to the next object, and \code{pa+i} points to the i-th object beyond \code{pa}.
+
+The correspondence between indexing and pointer arithmetic is very close. By definition, the value of a variable or expression of type array is the address of element zero of the array.
+Thus after the assignment
+\begin{lstlisting}
+    pa = &a[0];
+\end{lstlisting}
+\code{pa} and \code{a} have identical values.
+
+Since the name of an array is a synonym for the location of the initial element, the assignment \code{pa=\&a[0]} can also be written as
+\begin{lstlisting}
+    pa = a;
+\end{lstlisting}
+Rather more surprising, at first sight, is the fact that a reference to \code{a[i]} can also be written as \code{*(a+i)}. In evaluating \code{a[i]}, C converts it to \code{*(a+i)} immediately; the two forms are equivalent.
+
+Applying the operator \code{\&} to both parts of this equivalence, it follows that \code{\&a[i]} and \code{a+i} are also identical: \code{a+i} is the address of the i-th element beyond \code{a}.
+
+As the other side of this coin, if pa is a pointer, expressions might use it with a subscript; pa[i] is identical to
+\begin{lstlisting}
+    *(pa+i).
+\end{lstlisting}
+In short, an array-and-index expression is equivalent to one written as a pointer and offset.
+There is one difference between an array name and a pointer that must be kept in mind.
+A pointer is a variable, so \code{pa=a} and \code{pa++} are legal. But an array name is not a variable; constructions like \code{a=pa} and \code{a++} are illegal.
+
+When an array name is passed to a function, what is passed is the location of the initial element.
+Within the called function, this argument is a local variable, and so an array name parameter is a pointer, that is, a variable containing an address.
+We can use this fact to write another version of \code{strlen}, which computes the length of a string.
+\begin{lstlisting}
+    /* strlen: return length of string s */
+    int strlen(char *s)
+    {
+        int n;
+        for (n = 0; *s != '\0', s++)
+            n++;
+        return n;
+    }
+\end{lstlisting}
+Since \code{s} is a pointer, incrementing it is perfectly legal; \code{s++} has no effect on the character string in the function that called \code{strlen}, but merely increments \code{strlen}'s private copy of the pointer.
+That means that calls like
+\begin{lstlisting}
+    strlen("hello, world"); /* string constant */
+    strlen(array);          /* char array[100]; */
+    strlen(ptr);            /* char *ptr; */
+\end{lstlisting}
+all work.
+
+As formal parameters in a function definition,
+\begin{lstlisting}
+    char s[];
+\end{lstlisting}
+and
+\begin{lstlisting}
+    char *s;
+\end{lstlisting}
+are equivalent; we prefer the latter because it says more explicitly that the variable is a pointer.
+When an array name is passed to a function, the function can at its convenience believe that it has been handed either an array or a pointer, and manipulate it accordingly.
+It can even use both notations if it seems appropriate and clear.
+
+It is possible to pass part of an array to a function, by passing a pointer to the beginning of the subarray. For example, if \code{a} is an array,
+\begin{lstlisting}
+    f(&a[2])
+\end{lstlisting}
+and
+\begin{lstlisting}
+    f(a+2)
+\end{lstlisting}
+both pass to the function \code{f} the address of the subarray that starts at \code{a[2]}.
+Within \code{f}, the parameter declaration can read
+\begin{lstlisting}
+    f(int arr[]) { ... }
+\end{lstlisting}
+or
+\begin{lstlisting}
+    f(int *arr) { ... }
+\end{lstlisting}
+So as far as \code{f} is concerned, the fact that the parameter refers to part of a larger array is of no consequence.
+
+If one is sure that the elements exist, it is also possible to index backwards in an array; \code{p[-1]}, \code{p[-2]}, and so on are syntactically legal, and refer to the elements that immediately precede \code{p[0]}.
+Of course, it is illegal to refer to objects that are not within the array bounds.
+
+
+
+\section{Address Arithmetic}
+
+
+If \code{p} is a pointer to some element of an array, then \code{p++} increments \code{p} to point to the next element, and \code{p += i} increments it to point \code{i} elements beyond where it currently does.
+These and similar constructions are the simplest forms of pointer or address arithmetic.
+
+C is consistent and regular in its approach to address arithmetic; its integration of pointers, arrays, and address arithmetic is one of the strengths of the language.
+Let us illustrate by writing a rudimentary storage allocator.
+There are two routines.
+The first, \code{alloc(n)}, returns a pointer \code{p} to n-consecutive character positions, which can be used by the caller of \code{alloc} for storing characters.
+The second, \code{afree(p)}, releases the storage thus acquired so it can be reused later.
+The routines are ``rudimentary'' because the calls to \code{afree} must be made in the opposite order to the calls made on \code{alloc}.
+That is, the storage managed by \code{alloc} and \code{afree} is a stack, or last-in, first-out.
+The standard library provides analogous functions called \code{malloc} and \code{free} that have no such restrictions; in Section 8.7 we will show how they can be implemented.
+
+The easiest implementation is to have \code{alloc} hand out pieces of a large character array that we will call \code{allocbuf}. This array is private to \code{alloc} and \code{afree}.
+Since they deal in pointers, not array indices, no other routine need know the name of the array, which can be declared \code{static} in the source file containing \code{alloc} and \code{afree}, and thus be invisible outside it.
+In practical implementations, the array may well not even have a name; it might instead be obtained by calling \code{malloc} or by asking the operating system for a pointer to some unnamed block of storage.
+
+The other information needed is how much of \code{allocbuf} has been used.
+We use a pointer, called \code{allocp}, that points to the next free element.
+When \code{alloc} is asked for n characters, it checks to see if there is enough room left in \code{allocbuf}.
+If so, \code{alloc} returns the current value of \code{allocp} (i.e., the beginning of the free block), then increments it by \code{n} to point to the next free area.
+If there is no room, \code{alloc} returns zero. \code{afree(p)} merely sets \code{allocp} to \code{p} if \code{p} is inside \code{allocbuf}.
+
+\begin{lstlisting}[frameround=tttt,frame=none]
+
+#define ALLOCSIZE 10000       /* size of available space */
+
+static char allocbuf[ALLOCSIZE];    /* storage for alloc */
+static char *allocp = allocbuf;    /* next free position */
+
+char *alloc(int n)     /* return pointer to n characters */
+{
+    if (allocbuf + ALLOCSIZE - allocp >= n) { /* it fits */
+        allocp += n;
+        return allocp - n;                      /* old p */
+    } else                            /* not enough room */
+        return 0;
+}
+
+void afree(char *p)      /* free storage pointed to by p */
+{
+    if (p >= allocbuf && p < allocbuf + ALLOCSIZE)
+    allocp = p;
+}
+
+\end{lstlisting}
+
+In general a pointer can be initialized just as any other variable can, though normally the only meaningful values are zero or an expression involving the address of previously defined data of appropriate type.
+The declaration
+\begin{lstlisting}
+    static char *allocp = allocbuf;
+\end{lstlisting}
+defines \code{allocp} to be a character pointer and initializes it to point to the beginning of \code{allocbuf}, which is the next free position when the program starts.
+This could also have been written
+\begin{lstlisting}
+    static char *allocp = &allocbuf[0];
+\end{lstlisting}
+since the array name is the address of the zeroth element.
+The test
+\begin{lstlisting}
+    if (allocbuf + ALLOCSIZE - allocp >= n) { /* it fits */
+\end{lstlisting}
+checks if there's enough room to satisfy a request for \code{n} characters. If there is, the new value of \code{allocp} would be at most one beyond the end of \code{allocbuf}.
+If the request can be satisfied, \code{alloc} returns a pointer to the beginning of a block of characters (notice the declaration of the function itself).
+If not, \code{alloc} must return some signal that there is no space left.
+C guarantees that zero is never a valid address for data, so a return value of zero can be used to signal an abnormal event, in this case no space.
+
+Pointers and integers are not interchangeable. Zero is the sole exception: the constant zero may be assigned to a pointer, and a pointer may be compared with the constant zero.
+The symbolic constant \code{NULL} is often used in place of zero, as a mnemonic to indicate more clearly that this is a special value for a pointer. \code{NULL} is defined in \code{<stdio.h>}. We will use \code{NULL} henceforth.
+
+Tests like
+\begin{lstlisting}
+    if (allocbuf + ALLOCSIZE - allocp >= n) { /* it fits */
+\end{lstlisting}
+and
+\begin{lstlisting}
+    if (p >= allocbuf && p < allocbuf + ALLOCSIZE)
+\end{lstlisting}
+show several important facets of pointer arithmetic.
+
+First, pointers may be compared under certain circumstances. If \code{p} and \code{q} point to members of the same array, then relations like \code{==}, \code{!=}, \code{<}, \code{>=}, etc., work properly. For example,
+\begin{lstlisting}
+    p < q
+\end{lstlisting}
+is true if \code{p} points to an earlier element of the array than \code{q} does.
+Any pointer can be meaningfully compared for equality or inequality with zero.
+But the behavior is undefined for arithmetic or comparisons with pointers that do not point to members of the same array.
+(There is one exception: the address of the first element past the end of an array can be used in pointer arithmetic.)
+
+Second, we have already observed that a pointer and an integer may be added or subtracted.
+The construction
+\begin{lstlisting}
+    p + n
+\end{lstlisting}
+means the address of the \code{n}-th object beyond the one \code{p} currently points to.
+This is true regardless of the kind of object \code{p} points to; \code{n} is scaled according to the size of the objects \code{p} points to, which is determined by the declaration of \code{p}.
+If an \code{int} is four bytes, for example, the int will be scaled by four.
+
+Pointer subtraction is also valid: if \code{p} and \code{q} point to elements of the same array, and \code{p < q}, then \code{q-p+1} is the number of elements from \code{p} to \code{q} inclusive.
+This fact can be used to write yet another version of \code{strlen}:
+
+\begin{lstlisting}
+    /* strlen: return length of string s */
+    int strlen(char *s)
+    {
+        char *p = s;
+        while (*p != '\0')
+        p++;
+        return p - s;
+    }
+\end{lstlisting}
+
+In its declaration, \code{p} is initialized to \code{s}, that is, to point to the first character of the string. In the while loop, each character in turn is examined until the \code{'\textbackslash0'} at the end is seen.
+Because \code{p} points to characters, \code{p++} advances \code{p} to the next character each time, and \code{p-s} gives the number of characters advanced over, that is, the string length.
+(The number of characters in the string could be too large to store in an \code{int}. The header \code{<stddef.h>} defines a type \code{ptrdiff\_t} that is large enough to hold the signed difference of two pointer values.
+If we were being cautious, however, we would use \code{size\_t} for the return value of \code{strlen}, to match the standard library version. \code{size\_t} is the unsigned integer type returned by the \code{sizeof} operator.)
+
+Pointer arithmetic is consistent: if we had been dealing with \code{float}s, which occupy more storage that \code{char}s, and if \code{p} were a pointer to \code{float}, \code{p++} would advance to the next \code{float}.
+Thus we could write another version of alloc that maintains \code{float}s instead of \code{char}s, merely by changing char to \code{float} throughout alloc and afree.
+All the pointer manipulations automatically take into account the size of the objects pointed to.
+
+The valid pointer operations are assignment of pointers of the same type, adding or subtracting a pointer and an integer, subtracting or comparing two pointers to members of the same array, and assigning or comparing to zero.
+All other pointer arithmetic is illegal.
+It is not legal to add two pointers, or to multiply or divide or shift or mask them, or to add \code{float} or \code{double} to them, or even, except for \code{void *}, to assign a pointer of one type to a pointer of another type without a cast.
+
+
+
+\section{Character Pointers and Functions}
+
+
+A string constant, written as ``I am a string'' is an array of characters.
+In the internal representation, the array is terminated with the null character \code{'\textbackslash0'} so that programs can find the end.
+The length in storage is thus one more than the number of characters between the double quotes.
+
+Perhaps the most common occurrence of string constants is as arguments to functions, as in
+\begin{lstlisting}
+    printf("hello, world\n");
+\end{lstlisting}
+When a character string like this appears in a program, access to it is through a character pointer; \code{printf} receives a pointer to the beginning of the character array.
+That is, a string constant is accessed by a pointer to its first element.
+
+String constants need not be function arguments. If \code{pmessage} is declared as
+\begin{lstlisting}
+    char *pmessage;
+\end{lstlisting}
+then the statement
+\begin{lstlisting}
+    pmessage = "now is the time";
+\end{lstlisting}
+assigns to \code{pmessage} a pointer to the character array. This is not a string copy; only pointers are involved.
+C does not provide any operators for processing an entire string of characters as a unit.
+
+
+There is an important difference between these definitions:
+\begin{lstlisting}
+    char amessage[] = "now is the time"; /* an array */
+    char *pmessage = "now is the time";  /* a pointer */
+\end{lstlisting}
+
+\code{amessage} is an array, just big enough to hold the sequence of characters and \code{'\textbackslash0'} that initializes it.
+Individual characters within the array may be changed but \code{amessage} will always refer to the same storage.
+On the other hand, \code{pmessage} is a pointer, initialized to point to a string constant; the pointer may subsequently be modified to point elsewhere, but the result is undefined if you try to modify the string contents.
+
+We will illustrate more aspects of pointers and arrays by studying versions of two useful functions adapted from the standard library.
+The first function is \code{strcpy(s,t)}, which copies the string \code{t} to the string \code{s}. It would be nice just to say \code{s=t} but this copies the pointer, not the characters.
+To copy the characters, we need a loop. The array version first:
+
+\begin{lstlisting}
+    /* strcpy: copy t to s; array subscript version */
+    void strcpy(char *s, char *t)
+    {
+        int i;
+        i = 0;
+        while ((s[i] = t[i]) != '\0')
+            i++;
+    }
+\end{lstlisting}
+
+For contrast, here is a version of \code{strcpy} with pointers:
+
+\begin{lstlisting}
+    /* strcpy: copy t to s; pointer version */
+    void strcpy(char *s, char *t)
+    {
+        int i;
+        i = 0;
+        while ((*s = *t) != '\0') {
+            s++;
+            t++;
+        }
+    }
+\end{lstlisting}
+
+Because arguments are passed by value, \code{strcpy} can use the parameters \code{s} and \code{t} in any way it pleases.
+Here they are conveniently initialized pointers, which are marched along the arrays a character at a time, until the \code{'\textbackslash0'} that terminates \code{t} has been copied into \code{s}.
+
+
+In practice, \code{strcpy} would not be written as we showed it above. Experienced C programmers would prefer
+
+\begin{lstlisting}
+    /* strcpy: copy t to s; pointer version 2 */
+    void strcpy(char *s, char *t)
+    {
+        while ((*s++ = *t++) != '\0')
+            ;
+    }
+\end{lstlisting}
+
+This moves the increment of s and t into the test part of the loop.
+The value of \code{*t++} is the character that \code{t} pointed to before \code{t} was incremented; the postfix \code{++} doesn't change t until after this character has been fetched.
+In the same way, the character is stored into the old \code{s} position before \code{s} is incremented. This character is also the value that is compared against \code{'\textbackslash0'} to control the loop.
+The net effect is that characters are copied from \code{t} to \code{s}, up and including the terminating \code{'\textbackslash0'}.
+
+As the final abbreviation, observe that a comparison against \code{'\textbackslash0'} is redundant, since the question is merely whether the expression is zero. So the function would likely be written as
+
+\begin{lstlisting}
+    /* strcpy: copy t to s; pointer version 3 */
+    void strcpy(char *s, char *t)
+    {
+        while (*s++ = *t++)
+            ;
+    }
+\end{lstlisting}
+
+Although this may seem cryptic at first sight, the notational convenience is considerable, and the idiom should be mastered, because you will see it frequently in C programs.
+
+The \code{strcpy} in the standard library (\code{<string.h>}) returns the target string as its function value.
+
+The second routine that we will examine is \code{strcmp(s,t)}, which compares the character strings \code{s} and \code{t}, and returns negative, zero or positive if \code{s} is lexicographically less than, equal to, or greater than \code{t}.
+The value is obtained by subtracting the characters at the first position where \code{s} and \code{t} disagree.
+
+\begin{lstlisting}
+    /* strcmp: return <0 if s<t, 0 if s==t, >0 if s>t */
+    int strcmp(char *s, char *t)
+    {
+        int i;
+        for (i = 0; s[i] == t[i]; i++)
+            if (s[i] == '\0')
+                return 0;
+        return s[i] - t[i];
+    }
+\end{lstlisting}
+
+The pointer version of strcmp:
+
+\begin{lstlisting}
+    /* strcmp: return <0 if s<t, 0 if s==t, >0 if s>t */
+    int strcmp(char *s, char *t)
+    {
+        for ( ; *s == *t; s++, t++)
+            if (*s == '\0')
+                return 0;
+        return *s - *t;
+    }
+\end{lstlisting}
+
+Since \code{++} and \code{--} are either prefix or postfix operators, other combinations of \code{*}and \code{++} and \code{--} occur, although less frequently. For example,
+\begin{lstlisting}
+    *--p
+\end{lstlisting}
+decrements \code{p} before fetching the character that \code{p} points to. In fact, the pair of expressions
+\begin{lstlisting}
+    *p++ = val;     /* push val onto stack */
+    val = *--p;     /* pop top of stack into val */
+\end{lstlisting}
+are the standard idiom for pushing and popping a stack; see Section 4.3.
+The header \code{<string.h>} contains declarations for the functions mentioned in this section, plus a variety of other string-handling functions from the standard library.
+\newline
+
+\begin{ExerciseList}
+\Exercise Write a pointer version of the function \code{strcat} that we showed in Chapter 2: \code{strcat(s,t)} copies the string \code{t} to the end of \code{s}.
+\Exercise Write the function \code{strend(s,t)}, which returns 1 if the string \code{t} occurs at the end of the string \code{s}, and zero otherwise.
+\Exercise Write versions of the library functions \code{strncpy}, \code{strncat}, and \code{strncmp}, which operate on at most the first \code{n} characters of their argument strings.
+For example, \code{strncpy(s,t,n)} copies at most \code{n} characters of \code{t} to \code{s}. Full descriptions are in Appendix B.
+\Exercise Rewrite appropriate programs from earlier chapters and exercises with pointers instead of array indexing.
+Good possibilities include \code{getline} (Chapters 1 and 4), \code{atoi}, \code{itoa}, and their variants (Chapters 2, 3, and 4), \code{reverse} (Chapter 3), and \code{strindex} and \code{getop} (Chapter 4).
+\end{ExerciseList}
+
+
+
+\section{Pointer Arrays; Pointers to Pointers}
+
+
+Since pointers are variables themselves, they can be stored in arrays just as other variables can.
+Let us illustrate by writing a program that will sort a set of text lines into alphabetic order, a stripped-down version of the UNIX program sort.
+
+In Chapter 3, we presented a Shell sort function that would sort an array of integers, and in Chapter 4 we improved on it with a quicksort.
+The same algorithms will work, except that now we have to deal with lines of text, which are of different lengths, and which, unlike integers, can't be compared or moved in a single operation.
+We need a data representation that will cope efficiently and conveniently with variable-length text lines.
+
+This is where the array of pointers enters.
+If the lines to be sorted are stored end-to-end in one long character array, then each line can be accessed by a pointer to its first character.
+The pointers themselves can bee stored in an array. Two lines can be compared by passing their pointers to \code{strcmp}.
+When two out-of-order lines have to be exchanged, the pointers in the pointer array are exchanged, not the text lines themselves.
+
+This eliminates the twin problems of complicated storage management and high overhead that would go with moving the lines themselves.
+
+The sorting process has three steps:
+\begin{lstlisting}[basicstyle=\ttfamily\normalsize\itshape]
+    read all the lines of input
+    sort them
+    print them in order
+\end{lstlisting}
+As usual, it's best to divide the program into functions that match this natural division, with the main routine controlling the other functions.
+Let us defer the sorting step for a moment, and concentrate on the data structure and the input and output.
+
+The input routine has to collect and save the characters of each line, and build an array of pointers to the lines. It will also have to count the number of input lines, since that information is needed for sorting and printing.
+Since the input function can only cope with a finite number of input lines, it can return some illegal count like -1 if too much input is presented.
+
+The output routine only has to print the lines in the order in which they appear in the array of pointers.
+
+\begin{lstlisting}
+
+    #include <stdio.h>
+    #include <string.h>
+
+    #define MAXLINES 5000       /* max #lines to be sorted */
+    char *lineptr[MAXLINES];    /* pointers to text lines */
+
+    int readlines(char *lineptr[], int nlines);
+    void writelines(char *lineptr[], int nlines);
+    void qsort(char *lineptr[], int left, int right);
+
+    /* sort input lines */
+    main()
+    {
+        int nlines;     /* number of input lines read */
+        if ((nlines = readlines(lineptr, MAXLINES)) >= 0) {
+            qsort(lineptr, 0, nlines-1);
+            writelines(lineptr, nlines);
+            return 0;
+        } else {
+            printf("error: input too big to sort\n");
+            return 1;
+        }
+    }
+
+    #define MAXLEN 1000 /* max length of any input line */
+    int getline(char *, int);
+    char *alloc(int);
+
+    /* readlines: read input lines */
+    int readlines(char *lineptr[], int maxlines)
+    {
+        int len, nlines;
+        char *p, line[MAXLEN];
+        nlines = 0;
+        while ((len = getline(line, MAXLEN)) > 0)
+            if (nlines >= maxlines || p = alloc(len) == NULL)
+                return -1;
+        else {
+            line[len-1] = '\0'; /* delete newline */
+            strcpy(p, line);
+            lineptr[nlines++] = p;
+        }
+        return nlines;
+    }
+
+    /* writelines: write output lines */
+    void writelines(char *lineptr[], int nlines)
+    {
+        int i;
+        for (i = 0; i < nlines; i++)
+            printf("%s\n", lineptr[i]);
+    }
+
+\end{lstlisting}
+
+The function \code{getline} is from Section 1.9.
+
+The main new thing is the declaration for \code{lineptr}:
+\begin{lstlisting}
+    char *lineptr[MAXLINES]
+\end{lstlisting}
+says that \code{lineptr} is an array of MAXLINES elements, each element of which is a pointer to a char.
+That is, \code{lineptr[i]} is a character pointer, and \code{*lineptr[i]} is the character it points to, the first character of the \code{i}-th saved text line.
+
+Since \code{lineptr} is itself the name of an array, it can be treated as a pointer in the same manner as in our earlier examples, and writelines can be written instead as
+\begin{lstlisting}
+    /* writelines: write output lines */
+    void writelines(char *lineptr[], int nlines)
+    {
+        while (nlines-- > 0)
+        printf("%s\n", *lineptr++);
+    }
+\end{lstlisting}
+Initially, \code{*lineptr} points to the first line; each element advances it to the next line pointer while \code{nlines} is counted down.
+
+With input and output under control, we can proceed to sorting.
+The \code{quicksort} from Chapter 4 needs minor changes: the declarations have to be modified, and the comparison operation must be done by calling \code{strcmp}.
+The algorithm remains the same, which gives us some confidence that it will still work.
+
+\begin{lstlisting}
+
+    /* qsort: sort v[left]...v[right] into increasing order*/
+    void qsort(char *v[], int left, int right)
+    {
+        int i, last;
+        void swap(char *v[], int i, int j);
+
+        if (left >= right) /* do nothing if array contains */
+            return;        /* fewer than two elements */
+
+        swap(v, left, (left + right)/2);
+        last = left;
+        for (i = left+1; i <= right; i++)
+            if (strcmp(v[i], v[left]) < 0)
+                swap(v, ++last, i);
+        swap(v, left, last);
+
+        qsort(v, left, last-1);
+        qsort(v, last+1, right);
+    }
+
+\end{lstlisting}
+
+Similarly, the swap routine needs only trivial changes:
+
+\begin{lstlisting}
+    /* swap: interchange v[i] and v[j] */
+    void swap(char *v[], int i, int j)
+    {
+        char *temp;
+        temp = v[i];
+        v[i] = v[j];
+        v[j] = temp;
+    }
+\end{lstlisting}
+
+Since any individual element of \code{v} (alias \code{lineptr}) is a character pointer, \code{temp} must be also, so one can be copied to the other.
+\newline
+
+\begin{ExerciseList}
+\Exercise Rewrite \code{readlines} to store lines in an array supplied by \code{main}, rather than calling \code{alloc} to maintain storage. How much faster is the program?
+\end{ExerciseList}
+
+
+
+\section{Multi-dimensional Arrays}
+
+
+C provides rectangular multi-dimensional arrays, although in practice they are much less used than arrays of pointers.
+In this section, we will show some of their properties.
+
+Consider the problem of date conversion, from day of the month to day of the year and vice versa.
+For example, March 1 is the 60th day of a non-leap year, and the 61st day of a leap year.
+Let us define two functions to do the conversions: \code{day\_of\_year} converts the month and day into the day of the year, and \code{month\_day} converts the day of the year into the month and day.
+Since this latter function computes two values, the month and day arguments will be pointers:
+\begin{lstlisting}
+    month_day(1988, 60, &m, &d)
+\end{lstlisting}
+sets \code{m} to \code{2} and \code{d} to \code{29} (February 29th).
+
+These functions both need the same information, a table of the number of days in each month (``thirty days hath September ...'').
+Since the number of days per month differs for leap years and non-leap years, it's easier to separate them into two rows of a two-dimensional array than to keep track of what happens to February during computation.
+The array and the functions for performing the transformations are as follows:
+
+\begin{lstlisting}
+    static char daytab[2][13] = {
+        {0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31},
+        {0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
+    };
+
+    /* day_of_year: set day of year from month & day */
+    int day_of_year(int year, int month, int day)
+    {
+        int i, leap;
+        leap = year%4 == 0 && year%100 != 0 || year%400 == 0;
+        for (i = 1; i < month; i++)
+            day += daytab[leap][i];
+        return day;
+    }
+
+    /* month_day: set month, day from day of year */
+    void month_day(int year, int yearday, int *pmonth, int *pday)
+    {
+        int i, leap;
+        leap = year%4 == 0 && year%100 != 0 || year%400 == 0;
+        for (i = 1; yearday > daytab[leap][i]; i++)
+            yearday -= daytab[leap][i];
+        *pmonth = i;
+        *pday = yearday;
+    }
+\end{lstlisting}
+
+Recall that the arithmetic value of a logical expression, such as the one for leap, is either zero (false) or one (true), so it can be used as a subscript of the array \code{daytab}.
+The array daytab has to be external to both \code{day\_of\_year} and \code{month\_day}, so they can both use it.
+We made it \code{char} to illustrate a legitimate use of \code{char} for storing small non-character integers.
+\code{daytab} is the first two-dimensional array we have dealt with. In C, a two-dimensional array is really a one-dimensional array, each of whose elements is an array.
+Hence subscripts are written as
+\begin{lstlisting}
+    daytab[i][j]    /* [row][col] */
+\end{lstlisting}
+rather than
+\begin{lstlisting}
+    daytab[i,j]     /* WRONG */
+\end{lstlisting}
+Other than this notational distinction, a two-dimensional array can be treated in much the same way as in other languages.
+Elements are stored by rows, so the rightmost subscript, or column, varies fastest as elements are accessed in storage order.
+
+An array is initialized by a list of initializers in braces; each row of a two-dimensional array is initialized by a corresponding sub-list.
+We started the array \code{daytab} with a column of zero so that month numbers can run from the natural \code{1} to \code{12} instead of \code{0} to \code{11}.
+Since space is not at a premium here, this is clearer than adjusting the indices.
+
+If a two-dimensional array is to be passed to a function, the parameter declaration in the function must include the number of columns;
+the number of rows is irrelevant, since what is passed is, as before, a pointer to an array of rows, where each row is an array of 13 \code{int}s.
+In this particular case, it is a pointer to objects that are arrays of 13 \code{int}s.
+Thus if the array daytab is to be passed to a function \code{f}, the declaration of \code{f} would be:
+\begin{lstlisting}
+    f(int daytab[2][13]) { ... }
+\end{lstlisting}
+It could also be
+\begin{lstlisting}
+    f(int daytab[][13]) { ... }
+\end{lstlisting}
+since the number of rows is irrelevant, or it could be
+\begin{lstlisting}
+    f(int (*daytab)[13]) { ... }
+\end{lstlisting}
+which says that the parameter is a pointer to an array of 13 integers.
+
+The parentheses are necessary since brackets \code{[]} have higher precedence than \code{*}.
+Without parentheses, the declaration
+\begin{lstlisting}
+    int *daytab[13]
+\end{lstlisting}
+is an array of 13 pointers to integers.
+
+More generally, only the first dimension (subscript) of an array is free; all the others have to be specified.
+Section 5.12 has a further discussion of complicated declarations.
+\newline
+
+\begin{ExerciseList}
+\Exercise There is no error checking in \code{day\_of\_year} or \code{month\_day}. Remedy this defect.
+\end{ExerciseList}
+
+
+
+\section{Initialization of Pointer Arrays}
+
+
+Consider the problem of writing a function \code{month\_name(n)}, which returns a pointer to a character string containing the name of the \code{n}-th month.
+This is an ideal application for an internal \code{static} array.
+\code{month\_name} contains a private array of character strings, and returns a pointer to the proper one when called.
+This section shows how that array of names is initialized.
+
+The syntax is similar to previous initializations:
+\begin{lstlisting}
+    /* month_name: return name of n-th month */
+    char *month_name(int n)
+    {
+        static char *name[] = {
+            "Illegal month",
+            "January", "February", "March",
+            "April", "May", "June",
+            "July", "August", "September",
+            "October", "November", "December"
+        };
+        return (n < 1 || n > 12) ? name[0] : name[n];
+    }
+\end{lstlisting}
+The declaration of \code{name}, which is an array of character pointers, is the same as \code{lineptr} in the sorting example.
+The initializer is a list of character strings; each is assigned to the corresponding position in the array.
+The characters of the \code{i}-th string are placed somewhere, and a pointer to them is stored in \code{name[i]}.
+Since the size of the array \code{name} is not specified, the compiler counts the initializers and fills in the correct number.
+
+
+
+\section{Pointers vs. Multi-dimensional Arrays}
+
+
+Newcomers to C are sometimes confused about the difference between a two-dimensional array and an array of pointers, such as name in the example above.
+Given the definitions
+\begin{lstlisting}
+    int a[10][20];
+    int *b[10];
+\end{lstlisting}
+then \code{a[3][4]} and \code{b[3][4]} are both syntactically legal references to a single \code{int}.
+But a is a true two-dimensional array: 200 \code{int}-sized locations have been set aside, and the conventional rectangular subscript calculation \code{20 * row +col} is used to find the element \code{a[row,col]}.
+For \code{b}, however, the definition only allocates 10 pointers and does not initialize them; initialization must be done explicitly, either statically or with code.
+Assuming that each element of \code{b} does point to a twenty-element array, then there will be 200 \code{int}s set aside, plus ten cells for the pointers.
+The important advantage of the pointer array is that the rows of the array may be of different lengths.
+That is, each element of \code{b} need not point to a twenty-element vector; some may point to two elements, some to fifty, and some to none at all.
+
+Although we have phrased this discussion in terms of integers, by far the most frequent use of arrays of pointers is to store character strings of diverse lengths, as in the function \code{month\_name}.
+Compare the declaration and picture for an array of pointers:
+
+\begin{lstlisting}
+    char *name[] = {"Illegal month", "Jan", "Feb", "Mar"};
+    char aname[][15] = {"Illegal month", "Jan", "Feb", "Mar"};
+\end{lstlisting}
+
+\begin{ExerciseList}
+\Exercise Rewrite the routines \code{day\_of\_year} and \code{month\_day} with pointers instead of indexing.
+\end{ExerciseList}
+
+
+
+\section{Command-line Arguments}
+
+
+In environments that support C, there is a way to pass command-line arguments or parameters to a program when it begins executing.
+When \code{main} is called, it is called with two arguments.
+The first (conventionally called \code{argc}, for argument count) is the number of command-line arguments the program was invoked with;
+the second (\code{argv}, for argument vector) is a pointer to an array of character strings that contain the arguments, one per string.
+We customarily use multiple levels of pointers to manipulate these character strings.
+
+The simplest illustration is the program echo, which echoes its command-line arguments on a single line, separated by blanks.
+That is, the command
+\begin{lstlisting}
+    echo hello, world
+\end{lstlisting}
+prints the output
+\begin{lstlisting}
+    hello, world
+\end{lstlisting}
+By convention, \code{argv[0]} is the name by which the program was invoked, so \code{argc} is at least 1.
+If \code{argc} is \code{1}, there are no command-line arguments after the program name.
+In the example above, \code{argc} is \code{3}, and \code{argv[0]}, \code{argv[1]}, and \code{argv[2]} are \code{``echo''}, \code{``hello,''}, and \code{``world''} respectively.
+The first optional argument is \code{argv[1]} and the last is \code{argv[argc-1]}; additionally, the standard requires that \code{argv[argc]} be a null pointer.
+
+The first version of echo treats \code{argv} as an array of character pointers:
+\begin{lstlisting}
+    #include <stdio.h>
+
+    /* echo command-line arguments; 1st version */
+    main(int argc, char *argv[])
+    {
+        int i;
+        for (i = 1; i < argc; i++)
+            printf("%s%s", argv[i], (i < argc-1) ? " " : "");
+        printf("\n");
+        return 0;
+    }
+\end{lstlisting}
+Since \code{argv} is a pointer to an array of pointers, we can manipulate the pointer rather than index the array.
+This next variant is based on incrementing \code{argv}, which is a pointer to pointer to char, while \code{argc} is counted down:
+
+\begin{lstlisting}
+    #include <stdio.h>
+
+    /* echo command-line arguments; 2nd version */
+    main(int argc, char *argv[])
+    {
+        while (--argc > 0)
+            printf("%s%s", *++argv, (argc > 1) ? " " : "");
+        printf("\n");
+        return 0;
+    }
+\end{lstlisting}
+
+Since \code{argv} is a pointer to the beginning of the array of argument strings, incrementing it by 1 \code{(++argv)} makes it point at the original \code{argv[1]} instead of \code{argv[0]}.
+Each successive increment moves it along to the next argument; \code{*argv} is then the pointer to that argument.
+At the same time, \code{argc} is decremented; when it becomes zero, there are no arguments left to print.
+Alternatively, we could write the \code{printf} statement as
+\begin{lstlisting}
+    printf((argc > 1) ? "%s " : "%s", *++argv);
+\end{lstlisting}
+This shows that the format argument of \code{printf} can be an expression too.
+
+As a second example, let us make some enhancements to the pattern-finding program from Section 4.1.
+If you recall, we wired the search pattern deep into the program, an obviously unsatisfactory arrangement.
+Following the lead of the UNIX program \code{grep}, let us enhance the program so the pattern to be matched is specified by the first argument on the command line.
+
+\begin{lstlisting}
+    #include <stdio.h>
+    #include <string.h>
+    #define MAXLINE 1000
+
+    int getline(char *line, int max);
+
+    /* find: print lines that match pattern from 1st arg */
+    main(int argc, char *argv[])
+    {
+        char line[MAXLINE];
+        int found = 0;
+        if (argc != 2)
+            printf("Usage: find pattern\n");
+        else
+            while (getline(line, MAXLINE) > 0)
+        if (strstr(line, argv[1]) != NULL) {
+            printf("%s", line);
+            found++;
+        }
+        return found;
+    }
+\end{lstlisting}
+
+The standard library function \code{strstr(s,t)} returns a pointer to the first occurrence of the string \code{t} in the string \code{s}, or \code{NULL} if there is none. It is declared in \code{<string.h>}.
+
+The model can now be elaborated to illustrate further pointer constructions.
+Suppose we want to allow two optional arguments.
+One says ``print all the lines except those that match the pattern;'' the second says ``precede each printed line by its line number''.
+
+A common convention for C programs on UNIX systems is that an argument that begins with a minus sign introduces an optional flag or parameter.
+If we choose \code{-x} (for ``except'') to signal the inversion, and \code{-n} (``number'') to request line numbering, then the command
+\begin{lstlisting}
+    find -x -n pattern
+\end{lstlisting}
+will print each line that doesn't match the pattern, preceded by its line number.
+
+Optional arguments should be permitted in any order, and the rest of the program should be independent of the number of arguments that we present.
+Furthermore, it is convenient for users if option arguments can be combined, as in
+\begin{lstlisting}
+    find -nx pattern
+\end{lstlisting}
+Here is the program:
+\begin{lstlisting}
+
+    #include <stdio.h>
+    #include <string.h>
+    #define MAXLINE 1000
+
+    int getline(char *line, int max);
+
+    /* find: print lines that match pattern from 1st arg */
+    main(int argc, char *argv[])
+    {
+        char line[MAXLINE];
+        long lineno = 0;
+        int c, except = 0, number = 0, found = 0;
+
+        while (--argc > 0 && (*++argv)[0] == '-')
+            while (c = *++argv[0])
+                switch (c) {
+                    case 'x':
+                        except = 1;
+                        break;
+                    case 'n':
+                        number = 1;
+                        break;
+                    default:
+                        printf("find: illegal option %c\n", c);
+                        argc = 0;
+                        found = -1;
+                    break;
+        }
+
+        if (argc != 1)
+            printf("Usage: find -x -n pattern\n");
+        else
+            while (getline(line, MAXLINE) > 0) {
+                lineno++;
+                if ((strstr(line, *argv) != NULL) != except) {
+                    if (number)
+                        printf("%ld:", lineno);
+                    printf("%s", line);
+                    found++;
+                }
+            }
+        return found;
+    }
+
+\end{lstlisting}
+
+\code{argc} is decremented and \code{argv} is incremented before each optional argument.
+At the end of the loop, if there are no errors, \code{argc} tells how many arguments remain unprocessed and \code{argv} points to the first of these.
+Thus \code{argc} should be \code{1} and \code{*argv} should point at the pattern.
+Notice that \code{*++argv} is a pointer to an argument string, so \code{(*++argv)[0]} is its first character. (An alternate valid form would be \code{**++argv}.)
+Because \code{[]} binds tighter than \code{*} and \code{++}, the parentheses are necessary; without them the expression would be taken as \code{*++(argv[0])}.
+In fact, that is what we have used in the inner loop, where the task is to walk along a specific argument string.
+In the inner loop, the expression \code{*++argv[0]} increments the pointer \code{argv[0]}!
+It is rare that one uses pointer expressions more complicated than these; in such cases, breaking them into two or three steps will be more intuitive.
+\newline
+
+\begin{ExerciseList}
+\Exercise Write the program \code{expr}, which evaluates a reverse Polish expression from the command line, where each operator or operand is a separate argument. For example,
+\begin{lstlisting}
+    expr 2 3 4 + *
+\end{lstlisting}
+evaluates 2 * (3+4).
+\Exercise Modify the program \code{entab} and \code{detab} (written as exercises in Chapter 1) to accept a list of tab stops as arguments. Use the default tab settings if there are no arguments.
+\Exercise Extend \code{entab} and \code{detab} to accept the shorthand
+\begin{lstlisting}
+    entab -m +n
+\end{lstlisting}
+to mean tab stops every \code{n} columns, starting at column \code{m}. Choose convenient (for the user) default behavior.
+\Exercise Write the program \code{tail}, which prints the last \code{n} lines of its input.
+By default, \code{n} is set to \code{10}, let us say, but it can be changed by an optional argument so that
+\begin{lstlisting}
+    tail -n
+\end{lstlisting}
+prints the last \code{n} lines.
+The program should behave rationally no matter how unreasonable the input or the value of \code{n}.
+Write the program so it makes the best use of available storage; lines should be stored as in the sorting program of Section 5.6, not in a two-dimensional array of fixed size.
+\end{ExerciseList}
+
+
+
+\section{Pointers to Functions}
+
+
+In C, a function itself is not a variable, but it is possible to define pointers to functions, which can be assigned, placed in arrays, passed to functions, returned by functions, and so on.
+We will illustrate this by modifying the sorting procedure written earlier in this chapter so that if the optional argument \code{-n} is given, it will sort the input lines numerically instead of lexicographically.
+
+A sort often consists of three parts --
+a comparison that determines the ordering of any pair of objects,
+an exchange that reverses their order, and
+a sorting algorithm that makes comparisons and exchanges until the objects are in order.
+The sorting algorithm is independent of the comparison and exchange operations, so by passing different comparison and exchange functions to it, we can arrange to sort by different criteria.
+This is the approach taken in our new sort.
+
+Lexicographic comparison of two lines is done by \code{strcmp}, as before;we will also need a routine \code{numcmp} that compares two lines on the basis of numeric value and returns the same kind of condition indication as \code{strcmp} does.
+These functions are declared ahead of \code{main} and a pointer to the appropriate one is passed to \code{qsort}.
+We have skimped on error processing for arguments, so as to concentrate on the \code{main} issues.
+
+\begin{lstlisting}
+
+    #include <stdio.h>
+    #include <string.h>
+
+    #define MAXLINES 5000 /* max #lines to be sorted */
+    char *lineptr[MAXLINES]; /* pointers to text lines */
+
+    int readlines(char *lineptr[], int nlines);
+    void writelines(char *lineptr[], int nlines);
+    void qsort(void *lineptr[], int left, int right,
+    int (*comp)(void *, void *));
+    int numcmp(char *, char *);
+
+    /* sort input lines */
+    main(int argc, char *argv[])
+    {
+        int nlines; /* number of input lines read */
+        int numeric = 0; /* 1 if numeric sort */
+        if (argc > 1 && strcmp(argv[1], "-n") == 0)
+            numeric = 1;
+        if ((nlines = readlines(lineptr, MAXLINES)) >= 0) {
+            qsort((void**) lineptr, 0, nlines-1,
+                (int (*)(void*,void*))(numeric ? numcmp : strcmp));
+            writelines(lineptr, nlines);
+            return 0;
+        } else {
+            printf("input too big to sort\n");
+            return 1;
+        }
+    }
+
+\end{lstlisting}
+In the call to \code{qsort}, \code{strcmp} and \code{numcmp} are addresses of functions. Since they are known to be functions, the \code{\&} is not necessary, in the same way that it is not needed before an array name.
+
+We have written \code{qsort} so it can process any data type, not just character strings.
+As indicated by the function prototype, \code{qsort} expects an array of pointers, two integers, and a function with two pointer arguments.
+The generic pointer type \code{void *} is used for the pointer arguments.
+Any pointer can be cast to \code{void *} and back again without loss of information, so we can call \code{qsort} by casting arguments to \code{void *}.
+The elaborate cast of the function argument casts the arguments of the comparison function.
+These will generally have no effect on actual representation, but assure the compiler that all is well.
+
+\begin{lstlisting}
+    /* qsort: sort v[left]...v[right] into increasing order*/
+    void qsort(void *v[], int left, int right,
+               int (*comp)(void *, void *))
+    {
+        int i, last;
+        void swap(void *v[], int, int);
+        if (left >= right) /* do nothing if array contains */
+            return;        /* fewer than two elements */
+        swap(v, left, (left + right)/2);
+        last = left;
+        for (i = left+1; i <= right; i++)
+            if ((*comp)(v[i], v[left]) < 0)
+                swap(v, ++last, i);
+        swap(v, left, last);
+        qsort(v, left, last-1, comp);
+        qsort(v, last+1, right, comp);
+    }
+\end{lstlisting}
+
+The declarations should be studied with some care. The fourth parameter of \code{qsort} is
+\begin{lstlisting}
+    int (*comp)(void *, void *)
+\end{lstlisting}
+which says that \code{comp} is a pointer to a function that has two \code{void *} arguments and returns an \code{int}.
+
+The use of \code{comp} in the line
+\begin{lstlisting}
+    if ((*comp)(v[i], v[left]) < 0)
+\end{lstlisting}
+is consistent with the declaration: \code{comp} is a pointer to a function, \code{*comp} is the function, and
+\begin{lstlisting}
+    (*comp)(v[i], v[left])
+\end{lstlisting}
+is the call to it.
+The parentheses are needed so the components are correctly associated;
+without them,
+\begin{lstlisting}
+    int *comp(void *, void *) /* WRONG */
+\end{lstlisting}
+says that \code{comp} is a function returning a pointer to an int, which is very different.
+
+We have already shown strcmp, which compares two strings.
+Here is \code{numcmp}, which compares two strings on a leading numeric value, computed by calling \code{atof}:
+
+\begin{lstlisting}
+    #include <stdlib.h>
+
+    /* numcmp: compare s1 and s2 numerically */
+    int numcmp(char *s1, char *s2)
+    {
+        double v1, v2;
+
+        v1 = atof(s1);
+        v2 = atof(s2);
+
+        if (v1 < v2)
+            return -1;
+        else if (v1 > v2)
+            return 1;
+        else
+            return 0;
+    }
+\end{lstlisting}
+
+The \code{swap} function, which exchanges two pointers, is identical to what we presented earlier in the chapter, except that the declarations are changed to \code{void *}.
+
+\begin{lstlisting}
+    void swap(void *v[], int i, int j;)
+    {
+        void *temp;
+        temp = v[i];
+        v[i] = v[j];
+        v[j] = temp;
+    }
+\end{lstlisting}
+
+A variety of other options can be added to the sorting program; some make challenging exercises.
+\newline
+
+\begin{ExerciseList}
+\Exercise Modify the sort program to handle a \code{-r} flag, which indicates sorting in reverse (decreasing) order. Be sure that \code{-r} works with \code{-n}.
+\Exercise Add the option \code{-f} to fold upper and lower case together, so that case distinctions are not made during sorting; for example, a and A compare equal.
+\Exercise Add the \code{-d} (``directory order'') option, which makes comparisons only on letters, numbers and blanks. Make sure it works in conjunction with \code{-f}.
+\Exercise Add a field-searching capability, so sorting may bee done on fields within lines, each field sorted according to an independent set of options.
+(The index for this book was sorted with \code{-df} for the index category and \code{-n} for the page numbers.)
+\end{ExerciseList}
+
+
+
+\section{Complicated Declarations}
+
+
+C is sometimes castigated for the syntax of its declarations, particularly ones that involve pointers to functions.
+The syntax is an attempt to make the declaration and the use agree;
+it works well for simple cases, but it can be confusing for the harder ones, because declarations cannot be read left to right, and because parentheses are over-used.
+
+The difference between
+\begin{lstlisting}
+    int *f();    /* f: function returning pointer to int */
+\end{lstlisting}
+and
+\begin{lstlisting}
+    int (*pf)() /* pf: pointer to function returning int */
+\end{lstlisting}
+illustrates the problem: \code{*} is a prefix operator and it has lower precedence than \code{()}, so parentheses are necessary to force the proper association.
+
+Although truly complicated declarations rarely arise in practice, it is important to know how to understand them, and, if necessary, how to create them.
+One good way to synthesize declarations is in small steps with typedef, which is discussed in Section 6.7.
+As an alternative, in this section we will present a pair of programs that convert from valid C to a word description and back again.
+The word description reads left to right.
+
+The first, \code{dcl}, is the more complex. It converts a C declaration into a word description, as in these examples:
+
+\begin{lstlisting}
+    char **argv
+        argv: pointer to pointer to char
+
+    int (*daytab)[13]
+        daytab: pointer to array[13] of int
+
+    int *daytab[13]
+        daytab: array[13] of pointer to int
+
+    void *comp()
+        comp: function returning pointer to void
+
+    void (*comp)()
+        comp: pointer to function returning void
+
+    char (*(*x())[])()
+        x: function returning pointer to array[] of
+        pointer to function returning char
+
+    char (*(*x[3])())[5]
+        x: array[3] of pointer to function returning
+        pointer to array[5] of char
+\end{lstlisting}
+
+\code{dcl} is based on the grammar that specifies a declarator, which is spelled out precisely in Appendix A, Section 8.5; this is a simplified form:
+\begin{lstlisting}[frameround=tttt,frame=none,stringstyle=\color{black}]
+    dcl:        optional *'s direct-dcl
+    direct-dcl: name
+                (dcl)
+                direct-dcl()
+                direct-dcl[optional size]
+\end{lstlisting}
+In words, a dcl is a \code{direct-dcl}, perhaps preceded by \code{*}'s. A \code{direct-dcl} is a name, or a parenthesized \code{dcl}, or a \code{direct-dcl} followed by parentheses, or a \code{direct-dcl} followed by brackets with an optional size.
+
+This grammar can be used to parse functions. For instance, consider this declarator:
+\begin{lstlisting}
+    (*pfa[])()
+\end{lstlisting}
+\code{pfa} will be identified as a name and thus as a \code{direct-dcl}.
+Then \code{pfa[]} is also a \code{direct-dcl}.
+Then \code{*pfa[]} is recognized as a \code{dcl}, so \code{(*pfa[])} is a \code{direct-dcl}.
+Then \code{(*pfa[])()} is a \code{direct-dcl} and thus a \code{dcl}.
+We can also illustrate the parse with a tree like this (where \code{direct-dcl} has been abbreviated to \code{dir-dcl}):
+
+The heart of the \code{dcl} program is a pair of functions, \code{dcl} and \code{dirdcl}, that parse a declaration according to this grammar.
+Because the grammar is recursively defined, the functions call each other recursively as they recognize pieces of a declaration; the program is called a recursive-descent parser.
+\begin{lstlisting}
+
+    /* dcl: parse a declarator */
+    void dcl(void)
+    {
+        int ns;
+        for (ns = 0; gettoken() == '*'; )   /* count *'s */
+            ns++;
+        dirdcl();
+        while (ns-- > 0)
+            strcat(out, " pointer to");
+    }
+
+    /* dirdcl: parse a direct declarator */
+    void dirdcl(void)
+    {
+        int type;
+        if (tokentype == '(') {         /* ( dcl ) */
+            dcl();
+            if (tokentype != ')')
+                printf("error: missing )\n");
+        } else if (tokentype == NAME)   /* variable name */
+            strcpy(name, token);
+        else
+            printf("error: expected name or (dcl)\n");
+
+        while ((type = gettoken()) == PARENS || type == BRACKETS)
+            if (type == PARENS)
+                strcat(out, " function returning");
+            else {
+                strcat(out, " array");
+                strcat(out, token);
+                strcat(out, " of");
+            }
+    }
+\end{lstlisting}
+
+Since the programs are intended to be illustrative, not bullet-proof, there are significant restrictions on \code{dcl}.
+It can only handle a simple data type line \code{char} or \code{int}.
+It does not handle argument types in functions, or qualifiers like \code{const}.
+Spurious blanks confuse it.
+It doesn't do much error recovery, so invalid declarations will also confuse it.
+These improvements are left as exercises.
+
+Here are the global variables and the main routine:
+\begin{lstlisting}
+
+    #include <stdio.h>
+    #include <string.h>
+    #include <ctype.h>
+
+    #define MAXTOKEN 100
+
+    enum { NAME, PARENS, BRACKETS };
+
+    void dcl(void);
+    void dirdcl(void);
+    int gettoken(void);
+
+    int tokentype;           /* type of last token */
+    char token[MAXTOKEN];    /* last token string */
+    char name[MAXTOKEN];     /* identifier name */
+    char datatype[MAXTOKEN]; /* data type = char, int,... */
+    char out[1000];
+
+    int main() /* convert declaration to words */
+    {
+        while (gettoken() != EOF) {  /* 1st token on line */
+            strcpy(datatype, token);   /* is the datatype */
+            out[0] = '\0';
+            dcl();                  /* parse rest of line */
+            if (tokentype != '\n')
+                printf("syntax error\n");
+            printf("%s: %s %s\n", name, out, datatype);
+        }
+        return 0;
+    }
+
+\end{lstlisting}
+
+The function \code{gettoken} skips blanks and tabs, then finds the next token in the input; a ``token'' is a name, a pair of parentheses, a pair of brackets perhaps including a number, or any other single character.
+\begin{lstlisting}
+    int gettoken(void) /* return next token */
+    {
+        int c, getch(void);
+        void ungetch(int);
+        char *p = token;
+
+        while ((c = getch()) == ' ' || c == '\t')
+            ;
+
+        if (c == '(') {
+            if ((c = getch()) == ')') {
+                strcpy(token, "()");
+                return tokentype = PARENS;
+            } else {
+                ungetch(c);
+                return tokentype = '(';
+            }
+        } else if (c == '[') {
+            for (*p++ = c; (*p++ = getch()) != ']'; )
+                ;
+            *p = '\0';
+            return tokentype = BRACKETS;
+        } else if (isalpha(c)) {
+            for (*p++ = c; isalnum(c = getch()); )
+                *p++ = c;
+            *p = '\0';
+            ungetch(c);
+            return tokentype = NAME;
+        } else
+            return tokentype = c;
+    }
+\end{lstlisting}
+\code{getch} and \code{ungetch} are discussed in Chapter 4.
+
+Going in the other direction is easier, especially if we do not worry about generating redundant parentheses.
+The program \code{undcl} converts a word description like ``x is a function returning a pointer to an array of pointers to functions returning char,'' which we will express as
+\begin{lstlisting}
+    x () * [] * () char
+\end{lstlisting}
+to
+\begin{lstlisting}
+    char (*(*x())[])()
+\end{lstlisting}
+The abbreviated input syntax lets us reuse the \code{gettoken} function. \code{undcl} also uses the same external variables as \code{dcl} does.
+
+\begin{lstlisting}
+    /* undcl: convert word descriptions to declarations */
+    int main()
+    {
+
+        int type;
+        char temp[MAXTOKEN];
+
+        while (gettoken() != EOF) {
+
+            strcpy(out, token);
+
+            while ((type = gettoken()) != '\n')
+                if (type == PARENS || type == BRACKETS)
+                    strcat(out, token);
+                else if (type == '*') {
+                    sprintf(temp, "(*%s)", out);
+                    strcpy(out, temp);
+                } else if (type == NAME) {
+                    sprintf(temp, "%s %s", token, out);
+                    strcpy(out, temp);
+                } else
+                    printf("invalid input at %s\n", token);
+        }
+        return 0;
+    }
+\end{lstlisting}
+
+\begin{ExerciseList}
+\Exercise Make \code{dcl} recover from input errors.
+\Exercise Modify \code{undcl} so that it does not add redundant parentheses to declarations.
+\Exercise Expand \code{dcl} to handle declarations with function argument types, qualifiers like \code{const}, and so on.
+\end{ExerciseList}
+

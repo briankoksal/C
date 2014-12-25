@@ -1,0 +1,31 @@
+\documentclass[letterpaper, oneside, 12pt]{book}
+\usepackage{listings,enumitem,graphicx,natbib,xcolor}
+\usepackage{amsmath,amsfonts,algorithm,algpseudocode}
+\usepackage{tabu,gnuplottex}
+\usepackage{appendix,hyperref}
+\usepackage{exercise,exsheets}
+\usepackage{setspace,gensymb,textcomp}
+
+\input{codestyle}
+\input{commands}
+
+\title{The C Programming Language}
+% \includeonly{library}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\pagebreak
+
+\include{chapter1}
+\setcounter{chapter}{4}
+\include{chapter5}
+\include{chapter6}
+
+\appendix
+\include{reference}
+\include{library}
+
+
+\end{document}
+

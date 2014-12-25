@@ -1,0 +1,1011 @@
+
+
+\chapter{Structures}
+
+
+A structure is a collection of one or more variables, possibly of different types, grouped together under a single name for convenient handling.
+(Structures are called ``records'' in some languages, notably Pascal.)
+Structures help to organize complicated data, particularly in large programs, because they permit a group of related variables to be treated as a unit instead of as separate entities.
+
+One traditional example of a structure is the payroll record: an employee is described by a set of attributes such as name, address, social security number, salary, etc.
+Some of these in turn could be structures: a name has several components, as does an address and even a salary.
+Another example, more typical for C, comes from graphics: a point is a pair of coordinate, a rectangle is a pair of points, and so on.
+
+The main change made by the ANSI standard is to define structure assignment -- structures may be copied and assigned to, passed to functions, and returned by functions.
+This has been supported by most compilers for many years, but the properties are now precisely defined. Automatic structures and arrays may now also be initialized.
+
+\section{Basics of Structures}
+
+Let us create a few structures suitable for graphics. The basic object is a point, which we will assume has an \code{x} coordinate and a \code{y} coordinate, both integers.
+The two components can be placed in a structure declared like this:
+\begin{lstlisting}
+	struct point {
+		int x;
+		int y;
+	};
+\end{lstlisting}
+The keyword \code{struct} introduces a structure declaration, which is a list of declarations enclosed in braces.
+An optional name called a structure tag may follow the word \code{struct} (as with point here).
+The tag names this kind of structure, and can be used subsequently as a shorthand for the part of the declaration in braces.
+The variables named in a structure are called members.
+A structure member or tag and an ordinary (i.e., non-member) variable can have the same name without conflict, since they can always be distinguished by context.
+Furthermore, the same member names may occur in different structures, although as a matter of style one would normally use the same names only for closely related objects.
+
+A \code{struct} declaration defines a type. The right brace that terminates the list of members may be followed by a list of variables, just as for any basic type.
+That is,
+\begin{lstlisting}
+	struct { ... } x, y, z;
+\end{lstlisting}
+is syntactically analogous to
+\begin{lstlisting}
+	int x, y, z;
+\end{lstlisting}
+in the sense that each statement declares \code{x}, \code{y} and \code{z} to be variables of the named type and causes space to be set aside for them.
+A structure declaration that is not followed by a list of variables reserves no storage; it merely describes a template or shape of a structure.
+If the declaration is tagged, however, the tag can be used later in definitions of instances of the structure.
+For example, given the declaration of \code{point} above,
+\begin{lstlisting}
+	struct point pt;
+\end{lstlisting}
+defines a variable \code{pt} which is a structure of type \code{struct point}.
+A structure can be initialized by following its definition with a list of initializers, each a constant expression, for the members:
+\begin{lstlisting}
+	struct maxpt = { 320, 200 };
+\end{lstlisting}
+An automatic structure may also be initialized by assignment or by calling a function that returns a structure of the right type.
+A member of a particular structure is referred to in an expression by a construction of the form
+\begin{lstlisting}[basicstyle=\ttfamily\normalsize\itshape, keywordstyle=\color{black}]
+	structure-name.member
+\end{lstlisting}
+The structure member operator ``.'' connects the structure name and the member name.
+To print the coordinates of the point \code{pt}, for instance,
+\begin{lstlisting}
+	printf("%d,%d", pt.x, pt.y);
+\end{lstlisting}
+or to compute the distance from the origin \code{(0,0)} to \code{pt},
+\begin{lstlisting}
+	double dist, sqrt(double);
+	dist = sqrt((double)pt.x * pt.x + (double)pt.y * pt.y);
+\end{lstlisting}
+Structures can be nested. One representation of a rectangle is a pair of points that denote the diagonally opposite corners:
+\begin{lstlisting}
+	struct rect {
+		struct point pt1;
+		struct point pt2;
+	};
+\end{lstlisting}
+The \code{rect} structure contains two point structures. If we declare \code{screen} as
+\begin{lstlisting}
+	struct rect screen;
+\end{lstlisting}
+then
+\begin{lstlisting}
+	screen.pt1.x
+\end{lstlisting}
+refers to the \code{x} coordinate of the \code{pt1} member of \code{screen}.
+
+
+
+\section{Structures and Functions}
+
+
+The only legal operations on a structure are copying it or assigning to it as a unit, taking its address with \code{\&}, and accessing its members.
+Copy and assignment include passing arguments to functions and returning values from functions as well.
+Structures may not be compared. A structure may be initialized by a list of constant member values; an automatic structure may also be initialized by an assignment.
+
+Let us investigate structures by writing some functions to manipulate points and rectangles.
+There are at least three possible approaches: pass components separately, pass an entire structure, or pass a pointer to it. Each has its good points and bad points.
+
+The first function, \code{makepoint}, will take two integers and return a \code{point} structure:
+\begin{lstlisting}
+	/* makepoint: make a point from x and y components */
+	struct point makepoint(int x, int y)
+	{
+	struct point temp;
+	temp.x = x;
+	temp.y = y;
+	return temp;
+	}
+\end{lstlisting}
+
+Notice that there is no conflict between the argument name and the member with the same name; indeed the re-use of the names stresses the relationship.
+\code{makepoint} can now be used to initialize any structure dynamically, or to provide structure arguments to a function:
+\begin{lstlisting}
+	struct rect screen;
+	struct point middle;
+	struct point makepoint(int, int);
+	screen.pt1 = makepoint(0,0);
+	screen.pt2 = makepoint(XMAX, YMAX);
+	middle = makepoint((screen.pt1.x + screen.pt2.x)/2,
+					   (screen.pt1.y + screen.pt2.y)/2);
+\end{lstlisting}
+
+The next step is a set of functions to do arithmetic on points. For instance,
+\begin{lstlisting}
+	/* addpoints: add two points */
+	struct addpoint(struct point p1, struct point p2)
+	{
+		p1.x += p2.x;
+		p1.y += p2.y;
+		return p1;
+	}
+\end{lstlisting}
+Here both the arguments and the return value are structures.
+We incremented the components in \code{p1} rather than using an explicit temporary variable to emphasize that structure parameters are passed by value like any others.
+As another example, the function \code{ptinrect} tests whether a point is inside a rectangle,
+where we have adopted the convention that a rectangle includes its left and bottom sides but not its top and right sides:
+\begin{lstlisting}
+	/* ptinrect: return 1 if p in r, 0 if not */
+	int ptinrect(struct point p, struct rect r)
+	{
+		return p.x >= r.pt1.x && p.x < r.pt2.x
+		&& p.y >= r.pt1.y && p.y < r.pt2.y;
+	}
+\end{lstlisting}
+
+This assumes that the rectangle is presented in a standard form where the \code{pt1} coordinates are less than the \code{pt2} coordinates.
+The following function returns a rectangle guaranteed to be in canonical form:
+\begin{lstlisting}
+	#define min(a, b) ((a) < (b) ? (a) : (b))
+	#define max(a, b) ((a) > (b) ? (a) : (b))
+	/* canonrect: canonicalize coordinates of rectangle */
+	struct rect canonrect(struct rect r)
+	{
+		struct rect temp;
+		temp.pt1.x = min(r.pt1.x, r.pt2.x);
+		temp.pt1.y = min(r.pt1.y, r.pt2.y);
+		temp.pt2.x = max(r.pt1.x, r.pt2.x);
+		temp.pt2.y = max(r.pt1.y, r.pt2.y);
+		return temp;
+	}
+\end{lstlisting}
+If a large structure is to be passed to a function, it is generally more efficient to pass a pointer than to copy the whole structure.
+Structure pointers are just like pointers to ordinary variables.
+The declaration
+\begin{lstlisting}
+	struct point *pp;
+\end{lstlisting}
+says that \code{pp} is a pointer to a structure of type \code{struct point}.
+If \code{pp} points to a point structure, \code{*pp} is the structure, and \code{(*pp).x} and \code{(*pp).y} are the members.
+To use \code{pp}, we might write, for example,
+\begin{lstlisting}
+	struct point origin, *pp;
+	pp = &origin;
+	printf("origin is (%d,%d)\n", (*pp).x, (*pp).y);
+\end{lstlisting}
+The parentheses are necessary in \code{(*pp).x} because the precedence of the structure member operator \code{.} is higher then \code{*}.
+The expression \code{*pp.x} means \code{*(pp.x)}, which is illegal here because \code{x} is not a pointer.
+Pointers to structures are so frequently used that an alternative notation is provided as a shorthand.
+If \code{p} is a pointer to a structure, then
+\begin{lstlisting}
+	p->member-of-structure
+\end{lstlisting}
+refers to the particular member. So we could write instead
+\begin{lstlisting}
+	printf("origin is (%d,%d)\n", pp->x, pp->y);
+\end{lstlisting}
+Both \code{.} and \code{->} associate from left to right, so if we have
+\begin{lstlisting}
+	struct rect r, *rp = &r;
+\end{lstlisting}
+then these four expressions are equivalent:
+\begin{lstlisting}
+	r.pt1.x
+	rp->pt1.x
+	(r.pt1).x
+	(rp->pt1).x
+\end{lstlisting}
+The structure operators \code{.} and \code{->}, together with \code{()} for function calls and \code{[]} for subscripts, are at the top of the precedence hierarchy and thus bind very tightly.
+For example, given the declaration
+\begin{lstlisting}
+	struct {
+		int len;
+		char *str;
+	} *p;
+\end{lstlisting}
+then
+\begin{lstlisting}
+	++p->len
+\end{lstlisting}
+increments \code{len}, not \code{p}, because the implied parenthesization is \code{++(p->len)}.
+Parentheses can be used to alter binding:
+\code{(++p)->len} increments \code{p} before accessing len, and
+\code{(p++)->len} increments \code{p} afterward. (This last set of parentheses is unnecessary.)
+In the same way,
+\code{*p->str} fetches whatever \code{str} points to;
+\code{*p->str++} increments \code{str} after accessing whatever it points to (just like \code{*s++});
+\code{(*p->str)++} increments whatever \code{str} points to; and
+\code{*p++->str} increments \code{p} after accessing whatever \code{str} points to.
+
+
+
+\section{Arrays of Structures}
+
+
+Consider writing a program to count the occurrences of each C keyword.
+We need an array of character strings to hold the names, and an array of integers for the counts.
+One possibility is to use two parallel arrays, \code{keyword} and \code{keycount}, as in
+\begin{lstlisting}
+	char *keyword[NKEYS];
+	int keycount[NKEYS];
+\end{lstlisting}
+But the very fact that the arrays are parallel suggests a different organization, an array of structures.
+Each \code{keyword} is a pair:
+\begin{lstlisting}
+	char *word;
+	int cout;
+\end{lstlisting}
+and there is an array of pairs.
+The structure declaration
+\begin{lstlisting}
+	struct key {
+		char *word;
+		int count;
+	} keytab[NKEYS];
+\end{lstlisting}
+declares a structure type \code{key}, defines an array \code{keytab} of structures of this type, and sets aside storage for them.
+Each element of the array is a structure.
+This could also be written
+\begin{lstlisting}
+	struct key {
+		char *word;
+		int count;
+	};
+	struct key keytab[NKEYS];
+\end{lstlisting}
+Since the structure \code{keytab} contains a constant set of names, it is easiest to make it an external variable and initialize it once and for all when it is defined.
+The structure initialization is analogous to earlier ones -- the definition is followed by a list of initializers enclosed in braces:
+\begin{lstlisting}
+	struct key {
+		char *word;
+		int count;
+	} keytab[] = {
+		"auto", 0,
+		"break", 0,
+		"case", 0,
+		"char", 0,
+		"const", 0,
+		"continue", 0,
+		"default", 0,
+		/* ... */
+		"unsigned", 0,
+		"void", 0,
+		"volatile", 0,
+		"while", 0
+	};
+\end{lstlisting}
+The initializers are listed in pairs corresponding to the structure members.
+It would be more precise to enclose the initializers for each ``row'' or structure in braces, as in
+\begin{lstlisting}
+	{ "auto", 0 },
+	{ "break", 0 },
+	{ "case", 0 },
+	...
+\end{lstlisting}
+but inner braces are not necessary when the initializers are simple variables or character strings, and when all are present.
+As usual, the number of entries in the array \code{keytab} will be computed if the initializers are present and the \code{[]} is left empty.
+
+The keyword counting program begins with the definition of \code{keytab}.
+The main routine reads the input by repeatedly calling a function \code{getword} that fetches one word at a time.
+Each word is looked up in \code{keytab} with a version of the binary search function that we wrote in Chapter 3.
+The list of keywords must be sorted in increasing order in the table.
+
+\begin{lstlisting}
+
+	#include <stdio.h>
+	#include <ctype.h>
+	#include <string.h>
+
+	#define MAXWORD 100
+	int getword(char *, int);
+	int binsearch(char *, struct key *, int);
+
+	/* count C keywords */
+	main()
+	{
+		int n;
+		char word[MAXWORD];
+		while (getword(word, MAXWORD) != EOF)
+			if (isalpha(word[0]))
+				if ((n = binsearch(word, keytab, NKEYS)) >= 0)
+					keytab[n].count++;
+		for (n = 0; n < NKEYS; n++)
+		if (keytab[n].count > 0)
+			printf("%4d %s\n", keytab[n].count, keytab[n].word);
+		return 0;
+	}
+
+	/* binsearch: find word in tab[0]...tab[n-1] */
+	int binsearch(char *word, struct key tab[], int n)
+	{
+		int cond;
+		int low, high, mid;
+		low = 0;
+		high = n - 1;
+		while (low <= high) {
+			mid = (low+high) / 2;
+			if ((cond = strcmp(word, tab[mid].word)) < 0)
+				high = mid - 1;
+			else if (cond > 0)
+				low = mid + 1;
+			else
+				return mid;
+			}
+		return -1;
+	}
+\end{lstlisting}
+We will show the function \code{getword} in a moment; for now it suffices to say that each call to \code{getword} finds a word, which is copied into the array named as its first argument.
+
+The quantity \code{NKEYS} is the number of keywords in \code{keytab}.
+Although we could count this by hand, it's a lot easier and safer to do it by machine, especially if the list is subject to change.
+One possibility would be to terminate the list of initializers with a null pointer, then loop along \code{keytab} until the end is found.
+
+But this is more than is needed, since the size of the array is completely determined at compile time.
+The size of the array is the size of one entry times the number of entries, so the number of entries is just
+\begin{lstlisting}[basicstyle=\ttfamily\normalsize\itshape, keywordstyle=\color{black}]
+	size of keytab / size of struct key
+\end{lstlisting}
+C provides a compile-time unary operator called \code{sizeof} that can be used to compute the size of any object.
+The expressions
+\begin{lstlisting}[basicstyle=\ttfamily\normalsize\itshape, keywordstyle=\color{black}]
+	sizeof object
+\end{lstlisting}
+\begin{lstlisting}[basicstyle=\ttfamily\normalsize\itshape, keywordstyle=\color{black}]
+and
+	sizeof (type name)
+\end{lstlisting}
+yield an integer equal to the size of the specified object or type in bytes.
+(Strictly, \code{sizeof} produces an unsigned integer value whose type, \code{size\_t}, is defined in the header \code{<stddef.h>}.)
+An object can be a variable or array or structure.
+A type name can be the name of a basic type like \code{int} or \code{double}, or a derived type like a structure or a pointer.
+
+In our case, the number of keywords is the size of the array divided by the size of one element.
+This computation is used in a \code{\#define} statement to set the value of \code{NKEYS}:
+\begin{lstlisting}
+	#define NKEYS (sizeof keytab / sizeof(struct key))
+\end{lstlisting}
+Another way to write this is to divide the array size by the size of a specific element:
+\begin{lstlisting}
+	#define NKEYS (sizeof keytab / sizeof(keytab[0]))
+\end{lstlisting}
+This has the advantage that it does not need to be changed if the type changes.
+
+A \code{sizeof} can not be used in a \code{\#if} line, because the preprocessor does not parse type names.
+But the expression in the \code{\#define} is not evaluated by the preprocessor, so the code here is legal.
+
+Now for the function \code{getword}.
+We have written a more general \code{getword} than is necessary for this program, but it is not complicated.
+\code{getword} fetches the next ``word'' from the input, where a word is either a string of letters and digits beginning with a letter, or a single non-white space character.
+The function value is the first character of the word, or \code{EOF} for end of file, or the character itself if it is not alphabetic.
+
+\begin{lstlisting}
+	/* getword: get next word or character from input */
+	int getword(char *word, int lim)
+	{
+		int c, getch(void);
+		void ungetch(int);
+		char *w = word;
+		while (isspace(c = getch()))
+			;
+		if (c != EOF)
+			*w++ = c;
+		if (!isalpha(c)) {
+			*w = '\0';
+			return c;
+		}
+		for ( ; --lim > 0; w++)
+		if (!isalnum(*w = getch())) {
+			ungetch(*w);
+			break;
+		}
+		*w = '\0';
+		return word[0];
+	}
+\end{lstlisting}
+
+\code{getword} uses the \code{getch} and \code{ungetch} that we wrote in Chapter 4.
+When the collection of an alphanumeric token stops, \code{getword} has gone one character too far.
+The call to \code{ungetch} pushes that character back on the input for the next call.
+\code{getword} also uses \code{isspace} to skip whitespace, \code{isalpha} to identify letters, and \code{isalnum} to identify letters and digits; all are from the standard header \code{<ctype.h>}.
+\newline
+
+\begin{ExerciseList}
+\Exercise Our version of \code{getword} does not properly handle underscores, string constants, comments, or preprocessor control lines. Write a better version.
+\end{ExerciseList}
+
+
+
+\section{Pointers to Structures}
+
+To illustrate some of the considerations involved with pointers to and arrays of structures, let us write the keyword-counting program again, this time using pointers instead of array indices.
+The external declaration of \code{keytab} need not change, but \code{main} and \code{binsearch} do need modification.
+
+\begin{lstlisting}
+	#include <stdio.h>
+	#include <ctype.h>
+	#include <string.h>
+	#define MAXWORD 100
+
+	int getword(char *, int);
+	struct key *binsearch(char *, struct key *, int);
+
+	/* count C keywords; pointer version */
+	main()
+	{
+		char word[MAXWORD];
+		struct key *p;
+		while (getword(word, MAXWORD) != EOF)
+		if (isalpha(word[0]))
+			if ((p=binsearch(word, keytab, NKEYS)) != NULL)
+				p->count++;
+		for (p = keytab; p < keytab + NKEYS; p++)
+			if (p->count > 0)
+				printf("%4d %s\n", p->count, p->word);
+		return 0;
+	}
+
+	/* binsearch: find word in tab[0]...tab[n-1] */
+	struct key *binsearch(char *word, struck key *tab, int n)
+	{
+		int cond;
+		struct key *low = &tab[0];
+		struct key *high = &tab[n];
+		struct key *mid;
+		while (low < high) {
+			mid = low + (high-low) / 2;
+			if ((cond = strcmp(word, mid->word)) < 0)
+				high = mid;
+			else if (cond > 0)
+				low = mid + 1;
+			else
+				return mid;
+		}
+		return NULL;
+	}
+\end{lstlisting}
+There are several things worthy of note here.
+First, the declaration of \code{binsearch} must indicate that it returns a pointer to \code{struct} key instead of an integer; this is declared both in the function prototype and in \code{binsearch}.
+If \code{binsearch} finds the word, it returns a pointer to it; if it fails, it returns \code{NULL}.
+Second, the elements of \code{keytab} are now accessed by pointers. This requires significant changes in \code{binsearch}.
+
+The initializers for \code{low} and \code{high} are now pointers to the beginning and just past the end of the table.
+The computation of the middle element can no longer be simply
+\begin{lstlisting}
+	mid = (low+high) / 2  /* WRONG */
+\end{lstlisting}
+because the addition of pointers is illegal.
+Subtraction is legal, however, so high-low is the number of elements, and thus
+\begin{lstlisting}
+	mid = low + (high-low) / 2
+\end{lstlisting}
+sets \code{mid} to the element halfway between \code{low} and \code{high}.
+
+The most important change is to adjust the algorithm to make sure that it does not generate an illegal pointer or attempt to access an element outside the array.
+The problem is that \code{\&tab[-1]} and \code{\&tab[n]} are both outside the limits of the array tab.
+The former is strictly illegal, and it is illegal to dereference the latter.
+The language definition does guarantee, however, that pointer arithmetic that involves the first element beyond the end of an array (that is, \code{\&tab[n]}) will work correctly.
+In \code{main} we wrote
+\begin{lstlisting}
+	for (p = keytab; p < keytab + NKEYS; p++)
+\end{lstlisting}
+If \code{p} is a pointer to a structure, arithmetic on \code{p} takes into account the size of the structure, so \code{p++} increments \code{p} by the correct amount to get the next element of the array of structures, and the test stops the loop at the right time.
+
+Don't assume, however, that the size of a structure is the sum of the sizes of its members.
+Because of alignment requirements for different objects, there may be unnamed ``holes'' in a structure.
+Thus, for instance, if a \code{char} is one byte and an \code{int} four bytes, the structure
+\begin{lstlisting}
+	struct {
+		char c;
+		int i;
+	};
+\end{lstlisting}
+might well require eight bytes, not five.
+The \code{sizeof} operator returns the proper value.
+Finally, an aside on program format: when a function returns a complicated type like a
+\begin{lstlisting}
+	structure pointer,
+\end{lstlisting}
+as in
+\begin{lstlisting}
+	struct key *binsearch(char *word, struct key *tab, int n)
+\end{lstlisting}
+the function name can be hard to see, and to find with a text editor.
+Accordingly an alternate style is sometimes used:
+\begin{lstlisting}
+	struct key *
+	binsearch(char *word, struct key *tab, int n)
+\end{lstlisting}
+This is a matter of personal taste; pick the form you like and hold to it.
+
+
+
+\section{Self-referential Structures}
+
+Suppose we want to handle the more general problem of counting the occurrences of all the words in some input.
+Since the list of words isn't known in advance, we can't conveniently sort it and use a binary search.
+Yet we can't do a linear search for each word as it arrives, to see if it's already been seen; the program would take too long.
+(More precisely, its running time is likely to grow quadratically with the number of input words.)
+
+How can we organize the data to copy efficiently with a list or arbitrary words?
+One solution is to keep the set of words seen so far sorted at all times, by placing each word into its proper position in the order as it arrives.
+This shouldn't be done by shifting words in a linear array, though -- that also takes too long.
+Instead we will use a data structure called a \emph{binary tree}.
+
+The tree contains one ``node'' per distinct word; each node contains
+\begin{itemize}[nolistsep]
+\item A pointer to the text of the word,
+\item A count of the number of occurrences,
+\item A pointer to the left child node,
+\item A pointer to the right child node.
+\end{itemize}
+No node may have more than two children; it might have only zero or one.
+
+The nodes are maintained so that at any node the left subtree contains only words that are lexicographically less than the word at the node, and the right subtree contains only words that are greater.
+This is the tree for the sentence ``now is the time for all good men to come to the aid of their party'', as built by inserting each word as it is encountered:
+
+To find out whether a new word is already in the tree, start at the root and compare the new word to the word stored at that node.
+If they match, the question is answered affirmatively.
+If the new record is less than the tree word, continue searching at the left child, otherwise at the right child.
+If there is no child in the required direction, the new word is not in the tree, and in fact the empty slot is the proper place to add the new word.
+This process is recursive, since the search from any node uses a search from one of its children.
+Accordingly, recursive routines for insertion and printing will be most natural.
+
+Going back to the description of a node, it is most conveniently represented as a structure with four components:
+\begin{lstlisting}
+	struct tnode {        	 /* the tree node: */
+		char *word;   		 /* points to the text */
+		int count; 			 /* number of occurrences */
+		struct tnode *left;	 /* left child */
+		struct tnode *right; /* right child */
+	};
+\end{lstlisting}
+This recursive declaration of a node might look chancy, but it's correct. It is illegal for a structure to contain an instance of itself, but
+\begin{lstlisting}
+	struct tnode *left;
+\end{lstlisting}
+declares left to be a pointer to a \code{tnode}, not a \code{tnode} itself
+
+Occasionally, one needs a variation of self-referential structures: two structures that refer to each other.
+The way to handle this is:
+\begin{lstlisting}
+	struct t {
+		...
+		struct s *p; /* p points to an s */
+	};
+	struct s {
+		...
+		struct t *q; /* q points to a t */
+	};
+\end{lstlisting}
+The code for the whole program is surprisingly small, given a handful of supporting routines like \code{getword} that we have already written.
+The \code{main} routine reads words with \code{getword} and installs them in the tree with \code{addtree}.
+\begin{lstlisting}
+
+	#include <stdio.h>
+	#include <ctype.h>
+	#include <string.h>
+	#define MAXWORD 100
+
+	struct tnode *addtree(struct tnode *, char *);
+	void treeprint(struct tnode *);
+	int getword(char *, int);
+
+	/* word frequency count */
+	main()
+	{
+		struct tnode *root;
+		char word[MAXWORD];
+		root = NULL;
+		while (getword(word, MAXWORD) != EOF)
+			if (isalpha(word[0]))
+				root = addtree(root, word);
+		treeprint(root);
+		return 0;
+	}
+\end{lstlisting}
+The function \code{addtree} is recursive. A word is presented by main to the top level (the root) of the tree.
+At each stage, that word is compared to the word already stored at the node, and is percolated down to either the left or right subtree by a recursive call to \code{adtree}.
+Eventually, the word either matches something already in the tree (in which case the count is incremented), or a null pointer is encountered, indicating that a node must be created and added to the tree.
+If a new node is created, \code{addtree} returns a pointer to it, which is installed in the parent node.
+
+\begin{lstlisting}
+	struct tnode *talloc(void);
+	char *strdup(char *);
+	/* addtree: add a node with w, at or below p */
+	struct treenode *addtree(struct tnode *p, char *w)
+	{
+		int cond;
+		if (p == NULL) { 	/* a new word has arrived */
+			p = talloc(); 	/* make a new node */
+			p->word = strdup(w);
+			p->count = 1;
+			p->left = p->right = NULL;
+		} else if ((cond = strcmp(w, p->word)) == 0)
+			p->count++; 	/* repeated word */
+		else if (cond < 0) 	/* less than into left subtree */
+			p->left = addtree(p->left, w);
+		else 			/* greater than into right subtree */
+			p->right = addtree(p->right, w);
+		return p;
+	}
+\end{lstlisting}
+Storage for the new node is fetched by a routine \code{talloc}, which returns a pointer to a free space suitable for holding a tree node, and the new word is copied into a hidden space by \code{strdup}.
+(We will discuss these routines in a moment.)
+The count is initialized, and the two children are made null.
+This part of the code is executed only at the leaves of the tree, when a new node is being added.
+We have (unwisely) omitted error checking on the values returned by \code{strdup} and \code{talloc}.
+
+\code{treeprint} prints the tree in sorted order; at each node, it prints the left subtree (all the words less than this word), then the word itself, then the right subtree (all the words greater).
+If you feel shaky about how recursion works, simulate \code{treeprint} as it operates on the tree shown above.
+\begin{lstlisting}
+	/* treeprint: in-order print of tree p */
+	void treeprint(struct tnode *p)
+	{
+		if (p != NULL) {
+			treeprint(p->left);
+			printf("%4d %s\n", p->count, p->word);
+			treeprint(p->right);
+		}
+	}
+\end{lstlisting}
+A practical note: if the tree becomes ``unbalanced'' because the words don't arrive in random order, the running time of the program can grow too much.
+As a worst case, if the words are already in order, this program does an expensive simulation of linear search.
+There are generalizations of the binary tree that do not suffer from this worst-case behavior, but we will not describe them here.
+
+Before leaving this example, it is also worth a brief digression on a problem related to storage allocators.
+Clearly it's desirable that there be only one storage allocator in a program, even though it allocates different kinds of objects.
+But if one allocator is to process requests for, say, pointers to chars and pointers to struct tnodes, two questions arise.
+First, how does it meet the requirement of most real machines that objects of certain types must satisfy alignment restrictions (for example, integers often must be located at even addresses)?
+Second, what declarations can cope with the fact that an allocator must necessarily return different kinds of pointers?
+
+Alignment requirements can generally be satisfied easily, at the cost of some wasted space, by ensuring that the allocator always returns a pointer that meets all alignment restrictions.
+The \code{alloc} of Chapter 5 does not guarantee any particular alignment, so we will use the standard library function \code{malloc}, which does.
+In Chapter 8 we will show one way to implement \code{malloc}.
+
+The question of the type declaration for a function like \code{malloc} is a vexing one for any language that takes its type-checking seriously.
+In C, the proper method is to declare that \code{malloc} returns a pointer to \code{void}, then explicitly coerce the pointer into the desired type with a cast.
+\code{malloc} and related routines are declared in the standard header \code{<stdlib.h>}. Thus talloc can be written as
+
+\begin{lstlisting}
+	#include <stdlib.h>
+
+	/* talloc: make a tnode */
+	struct tnode *talloc(void)
+	{
+		return (struct tnode *) malloc(sizeof(struct tnode));
+	}
+\end{lstlisting}
+\code{strdup} merely copies the string given by its argument into a safe place, obtained by a call on \code{malloc}:
+\begin{lstlisting}
+	char *strdup(char *s) /* make a duplicate of s */
+	{
+	char *p;
+	p = (char *) malloc(strlen(s)+1); /* +1 for '\0' */
+	if (p != NULL)
+	strcpy(p, s);
+	return p;
+	}
+\end{lstlisting}
+\code{malloc} returns \code{NULL} if no space is available; \code{strdup} passes that value on, leaving errorhandling to its caller.
+Storage obtained by calling \code{malloc} may be freed for re-use by calling \code{free}; see Chapters 8 and 7.
+\newline
+
+\begin{ExerciseList}
+\Exercise Write a program that reads a C program and prints in alphabetical order each group of variable names that are identical in the first 6 characters, but different somewhere thereafter. Don't count words within strings and comments. Make 6 a parameter that can be set from the command line.
+\Exercise Write a cross-referencer that prints a list of all words in a document, and for each word, a list of the line numbers on which it occurs. Remove noise words like ``the,'' ``and,'' and so on.
+\Exercise Write a program that prints the distinct words in its input sorted into decreasing order of frequency of occurrence. Precede each word by its count.
+\end{ExerciseList}
+
+
+
+\section{Table Lookup}
+
+
+In this section we will write the innards of a table-lookup package, to illustrate more aspects of structures.
+This code is typical of what might be found in the symbol table management routines of a macro processor or a compiler.
+For example, consider the \code{\#define} statement. When a line like
+\begin{lstlisting}
+	#define IN 1
+\end{lstlisting}
+is encountered, the name \code{IN} and the replacement text \code{1} are stored in a table. Later, when the name \code{IN} appears in a statement like
+\begin{lstlisting}
+	state = IN;
+\end{lstlisting}
+it must be replaced by 1.
+
+There are two routines that manipulate the names and replacement texts.
+\code{install(s,t)} records the name \code{s} and the replacement text \code{t} in a table; \code{s} and \code{t} are just character strings.
+\code{lookup(s)} searches for \code{s} in the table, and returns a pointer to the place where it was found, or \code{NULL} if it wasn't there.
+
+The algorithm is a hash-search -- the incoming name is converted into a small non-negative integer, which is then used to index into an array of pointers.
+An array element points to the beginning of a linked list of blocks describing names that have that hash value. It is \code{NULL} if no names have hashed to that value.
+
+A block in the list is a structure containing pointers to the name, the replacement text, and the next block in the list. A null next-pointer marks the end of the list.
+\begin{lstlisting}
+	struct nlist { 		/* table entry: */
+	struct nlist *next; /* next entry in chain */
+		char *name; 	/* defined name */
+		char *defn; 	/* replacement text */
+	};
+\end{lstlisting}
+The pointer array is just
+\begin{lstlisting}
+	#define HASHSIZE 101
+	static struct nlist *hashtab[HASHSIZE]; /* pointer table */
+\end{lstlisting}
+The hashing function, which is used by both \code{lookup} and \code{install}, adds each character value in the string to a scrambled combination of the previous ones and returns the remainder modulo
+the array size. This is not the best possible hash function, but it is short and effective.
+\begin{lstlisting}
+	/* hash: form hash value for string s */
+	unsigned hash(char *s)
+	{
+		unsigned hashval;
+		for (hashval = 0; *s != '\0'; s++)
+			hashval = *s + 31 * hashval;
+		return hashval % HASHSIZE;
+	}
+\end{lstlisting}
+Unsigned arithmetic ensures that the hash value is non-negative.
+The hashing process produces a starting index in the array \code{hashtab}; if the string is to be found anywhere, it will be in the list of blocks beginning there.
+The search is performed by \code{lookup}. If \code{lookup} finds the entry already present, it returns a pointer to it; if not, it returns \code{NULL}.
+\begin{lstlisting}
+	/* lookup: look for s in hashtab */
+	struct nlist *lookup(char *s)
+	{
+	struct nlist *np;
+	for (np = hashtab[hash(s)]; np != NULL; np = np->next)
+		if (strcmp(s, np->name) == 0)
+			return np; 	/* found */
+	return NULL; 	/* not found */
+	}
+\end{lstlisting}
+The for loop in lookup is the standard idiom for walking along a linked list:
+\begin{lstlisting}
+	for (ptr = head; ptr != NULL; ptr = ptr->next)
+	...
+\end{lstlisting}
+\code{install} uses \code{lookup} to determine whether the name being installed is already present; if so, the new definition will supersede the old one.
+Otherwise, a new entry is created. \code{install} returns \code{NULL} if for any reason there is no room for a new entry.
+
+\begin{lstlisting}
+	struct nlist *lookup(char *);
+	char *strdup(char *);
+
+	/* install: put (name, defn) in hashtab */
+	struct nlist *install(char *name, char *defn)
+	{
+		struct nlist *np;
+		unsigned hashval;
+		if ((np = lookup(name)) == NULL) { /* not found */
+			np = (struct nlist *) malloc(sizeof(*np));
+			if (np == NULL || (np->name = strdup(name)) == NULL)
+				return NULL;
+			hashval = hash(name);
+			np->next = hashtab[hashval];
+			hashtab[hashval] = np;
+		} else 			/* already there */
+			free((void *) np->defn); /*free previous defn */
+	if ((np->defn = strdup(defn)) == NULL)
+		return NULL;
+	return np;
+	}
+\end{lstlisting}
+
+\begin{ExerciseList}
+\Exercise Write a function \code{undef} that will remove a name and definition from the table maintained by \code{lookup} and \code{install}.
+\Exercise Implement a simple version of the \code{\#define} processor (i.e., no arguments) suitable for use with C programs, based on the routines of this section. You may also find \code{getch} and \code{ungetch} helpful.
+\end{ExerciseList}
+
+
+
+\section{Typedef}
+
+
+C provides a facility called typedef for creating new data type names. For example, the declaration
+\begin{lstlisting}
+	typedef int Length;
+\end{lstlisting}
+makes the name \code{Length} a synonym for \code{int}. The type \code{Length} can be used in declarations, casts, etc., in exactly the same ways that the \code{int} type can be:
+\begin{lstlisting}
+	Length len, maxlen;
+	Length *lengths[];
+\end{lstlisting}
+Similarly, the declaration
+\begin{lstlisting}
+	typedef char *String;
+\end{lstlisting}
+makes \code{String} a synonym for \code{char *} or character pointer, which may then be used in declarations and casts:
+\begin{lstlisting}
+	String p, lineptr[MAXLINES], alloc(int);
+	int strcmp(String, String);
+	p = (String) malloc(100);
+\end{lstlisting}
+Notice that the type being declared in a \code{typedef} appears in the position of a variable name, not right after the word \code{typedef}.
+Syntactically, \code{typedef} is like the storage classes extern, static, etc.
+We have used capitalized names for \code{typedef}s, to make them stand out.
+As a more complicated example, we could make \code{typedef}s for the tree nodes shown earlier in this chapter:
+\begin{lstlisting}
+	typedef struct tnode *Treeptr;
+	typedef struct tnode { 	/* the tree node: */
+	char *word; 			/* points to the text */
+	int count; 				/* number of occurrences */
+	struct tnode *left; 	/* left child */
+	struct tnode *right; 	/* right child */
+	} Treenode;
+\end{lstlisting}
+This creates two new type keywords called \code{Treenode} (a structure) and \code{Treeptr} (a pointer to the structure).
+Then the routine talloc could become
+\begin{lstlisting}
+	Treeptr talloc(void)
+	{
+		return (Treeptr) malloc(sizeof(Treenode));
+	}
+\end{lstlisting}
+It must be emphasized that a typedef declaration does not create a new type in any sense; it merely adds a new name for some existing type.
+Nor are there any new semantics: variables declared this way have exactly the same properties as variables whose declarations are spelled out explicitly.
+In effect, \code{typedef} is like \code{\#define}, except that since it is interpreted by the compiler, it can cope with textual substitutions that are beyond the capabilities of the preprocessor.
+For example,
+\begin{lstlisting}
+	typedef int (*PFI)(char *, char *);
+\end{lstlisting}
+creates the type \code{PFI}, for ``pointer to function (of two \code{char *} arguments) returning \code{int},'' which can be used in contexts like
+\begin{lstlisting}
+	PFI strcmp, numcmp;
+\end{lstlisting}
+in the sort program of Chapter 5.
+
+Besides purely aesthetic issues, there are two main reasons for using \code{typedef}s.
+The first is to parameterize a program against portability problems.
+If \code{typedef}s are used for data types that may be machine-dependent, only the \code{typedef}s need change when the program is moved.
+One common situation is to use \code{typedef} names for various integer quantities, then make an appropriate set of choices of \code{short}, \code{int}, and \code{long} for each host machine.
+Types like \code{size\_t} and \code{ptrdiff\_t} from the standard library are examples.
+
+The second purpose of \code{typedef}s is to provide better documentation for a program -- a type called \code{Treeptr} may be easier to understand than one declared only as a pointer to a complicated structure.
+
+
+
+\section{Unions}
+
+
+A \code{union} is a variable that may hold (at different times) objects of different types and sizes, with the compiler keeping track of size and alignment requirements.
+Unions provide a way to manipulate different kinds of data in a single area of storage, without embedding any machinedependent information in the program.
+They are analogous to variant records in pascal.
+
+As an example such as might be found in a compiler symbol table manager, suppose that a constant may be an \code{int}, a \code{float}, or a character pointer.
+The value of a particular constant must be stored in a variable of the proper type, yet it is most convenient for table management if the value occupies the same amount of storage and is stored in the same place regardless of its type.
+This is the purpose of a \code{union} -- a single variable that can legitimately hold any of one of several types. The syntax is based on structures:
+\begin{lstlisting}
+	union u_tag {
+		int ival;
+		float fval;
+		char *sval;
+	} u;
+\end{lstlisting}
+The variable \code{u} will be large enough to hold the largest of the three types; the specific size is implementation-dependent.
+Any of these types may be assigned to \code{u} and then used in expressions, so long as the usage is consistent: the type retrieved must be the type most recently stored.
+It is the programmer's responsibility to keep track of which type is currently stored in a union; the results are implementation-dependent if something is stored as one type and extracted as another.
+Syntactically, members of a union are accessed as
+\begin{lstlisting}[basicstyle=\ttfamily\normalsize\itshape, keywordstyle=\color{black}]
+	union-name.member
+\end{lstlisting}
+or
+\begin{lstlisting}[basicstyle=\ttfamily\normalsize\itshape, keywordstyle=\color{black}]
+	union-pointer->member
+\end{lstlisting}
+just as \code{for} structures. If the variable \code{utype} is used to keep track of the current type stored in \code{u}, then one might see code such as
+\begin{lstlisting}
+	if (utype == INT)
+		printf("%d\n", u.ival);
+	if (utype == FLOAT)
+		printf("%f\n", u.fval);
+	if (utype == STRING)
+		printf("%s\n", u.sval);
+	else
+		printf("bad type %d in utype\n", utype);
+\end{lstlisting}
+Unions may occur within structures and arrays, and vice versa. The notation for accessing a member of a union in a structure (or vice versa) is identical to that for nested structures.
+For example, in the structure array defined by
+\begin{lstlisting}
+	struct {
+		char *name;
+		int flags;
+		int utype;
+		union {
+			int ival;
+			float fval;
+			char *sval;
+		} u;
+	} symtab[NSYM];
+\end{lstlisting}
+the member \code{ival} is referred to as
+\begin{lstlisting}
+	symtab[i].u.ival
+\end{lstlisting}
+and the first character of the string \code{sval} by either of
+\begin{lstlisting}
+	*symtab[i].u.sval
+	symtab[i].u.sval[0]
+\end{lstlisting}
+In effect, a \code{union} is a structure in which all members have offset zero from the base, the structure is big enough to hold the ``widest'' member, and the alignment is appropriate for all of the types in the union.
+The same operations are permitted on unions as on structures: assignment to or copying as a unit, taking the address, and accessing a member.
+
+A \code{union} may only be initialized with a value of the type of its first member; thus \code{union u} described above can only be initialized with an integer value.
+The storage allocator in Chapter 8 shows how a \code{union} can be used to force a variable to be aligned on a particular kind of storage boundary.
+
+
+
+\section{Bit-fields}
+
+
+When storage space is at a premium, it may be necessary to pack several objects into a single machine word; one common use is a set of single-bit flags in applications like compiler symbol tables.
+Externally-imposed data formats, such as interfaces to hardware devices, also often require the ability to get at pieces of a word.
+
+Imagine a fragment of a compiler that manipulates a symbol table.
+Each identifier in a program has certain information associated with it, for example, whether or not it is a keyword, whether or not it is external and/or \code{static}, and so on.
+The most compact way to encode such information is a set of one-bit flags in a single \code{char} or \code{int}.
+The usual way this is done is to define a set of ``masks'' corresponding to the relevant bit positions, as in
+\begin{lstlisting}
+	#define KEYWORD 01
+	#define EXTRENAL 02
+	#define STATIC 04
+\end{lstlisting}
+or
+\begin{lstlisting}
+	enum { KEYWORD = 01, EXTERNAL = 02, STATIC = 04 };
+\end{lstlisting}
+The numbers must be powers of two. Then accessing the bits becomes a matter of ``bitfiddling'' with the shifting, masking, and complementing operators that were described in Chapter 2.
+Certain idioms appear frequently:
+\begin{lstlisting}
+	flags |= EXTERNAL | STATIC;
+\end{lstlisting}
+turns on the \code{EXTERNAL} and \code{STATIC} bits in flags, while
+\begin{lstlisting}
+	flags &= ~(EXTERNAL | STATIC);
+\end{lstlisting}
+turns them off, and
+\begin{lstlisting}
+	if ((flags & (EXTERNAL | STATIC)) == 0) ...
+\end{lstlisting}
+is true if both bits are off.
+
+Although these idioms are readily mastered, as an alternative C offers the capability of defining and accessing fields within a word directly rather than by bitwise logical operators.
+A \emph{bit-field}, or \emph{field} for short, is a set of adjacent bits within a single implementation-defined storage unit that we will call a ``word.''
+For example, the symbol table \code{\#defines} above could be replaced by the definition of three fields:
+\begin{lstlisting}
+	struct {
+		unsigned int is_keyword : 1;
+		unsigned int is_extern : 1;
+		unsigned int is_static : 1;
+	} flags;
+\end{lstlisting}
+This defines a variable table called \code{flags} that contains three 1-bit fields.
+The number following the colon represents the field width in bits. The fields are declared \code{unsigned int} to ensure that they are unsigned quantities.
+
+Individual fields are referenced in the same way as other structure members: \code{flags.is\_keyword}, \code{flags.is\_extern}, etc.
+Fields behave like small integers, and may participate in arithmetic expressions just like other integers.
+Thus the previous examples may be written more naturally as
+\begin{lstlisting}
+	flags.is_extern = flags.is_static = 1;
+\end{lstlisting}
+to turn the bits on;
+\begin{lstlisting}
+	flags.is_extern = flags.is_static = 0;
+\end{lstlisting}
+to turn them off; and
+\begin{lstlisting}
+	if (flags.is_extern == 0 && flags.is_static == 0)
+	...
+\end{lstlisting}
+to test them.
+
+Almost everything about fields is implementation-dependent. Whether a field may overlap a word boundary is implementation-defined.
+Fields need not be names; unnamed fields (a colon and width only) are used for padding.
+The special width 0 may be used to force alignment at the next word boundary.
+
+Fields are assigned left to right on some machines and right to left on others.
+This means that although fields are useful for maintaining internally-defined data structures, the question of which end comes first has to be carefully considered when picking apart externally-defined
+data; programs that depend on such things are not portable.
+Fields may be declared only as \code{int}s; for portability, specify \code{signed} or \code{unsigned} explicitly.
+They are not arrays and they do not have addresses, so the \code{\&} operator cannot be applied on them.
+
+
